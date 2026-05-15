@@ -18,69 +18,69 @@ useHead({
     ],
 });
 
-const taskCount = ref(null);
-const notificationCount = ref(null);
+const taskCount = authStore.user.tasksCount;
+const notificationCount = authStore.user.notification;
 
-let ws = null;
+// let ws = null;
 
-const connectWebSocket = () => {
-  if (!authStore.isAuthenticated || !authStore.user?.userId) {
-    console.warn('Невозможно подключиться к WebSocket: пользователь не аутентифицирован или нет ID.');
-    return;
-  }
+// const connectWebSocket = () => {
+//   if (!authStore.isAuthenticated || !authStore.user?.userId) {
+//     console.warn('Невозможно подключиться к WebSocket: пользователь не аутентифицирован или нет ID.');
+//     return;
+//   }
 
-  ws = new WebSocket('ws://localhost:8080/ws?userId=${authStore.user.userId}'); 
+//   ws = new WebSocket('ws://localhost:8080/ws?userId=${authStore.user.userId}'); 
 
-  ws.onopen = () => {
-    console.log('WebSocket-соединение установлено.');
-  };
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
+//   ws.onopen = () => {
+//     console.log('WebSocket-соединение установлено.');
+//   };
+//   ws.onmessage = (event) => {
+//     const data = JSON.parse(event.data);
     
-    if (data.type === 'initialData' || data.type === 'update') {
-      taskCount.value = data.tasks;
-      notificationCount.value = data.notifications;
-    }
-  };
+//     if (data.type === 'initialData' || data.type === 'update') {
+//       taskCount.value = data.tasks;
+//       notificationCount.value = data.notifications;
+//     }
+//   };
 
-  ws.onerror = (error) => {
-    console.error('Ошибка WebSocket:', error);
-  };
+//   ws.onerror = (error) => {
+//     console.error('Ошибка WebSocket:', error);
+//   };
 
-  ws.onclose = (event) => {
-    console.log('WebSocket-соединение закрыто:', event.code, event.reason);
-    if (!event.wasClean) {
-      console.log('Попытка переподключения через 3 секунды...');
-      setTimeout(connectWebSocket, 3000); 
-    }
-  };
-};
+//   ws.onclose = (event) => {
+//     console.log('WebSocket-соединение закрыто:', event.code, event.reason);
+//     if (!event.wasClean) {
+//       console.log('Попытка переподключения через 3 секунды...');
+//       setTimeout(connectWebSocket, 3000); 
+//     }
+//   };
+// };
 
-const disconnectWebSocket = () => {
-  if (ws) {
-    ws.close(1000, 'Component unmounted');
-    ws = null;
-  }
-};
+// const disconnectWebSocket = () => {
+//   if (ws) {
+//     ws.close(1000, 'Component unmounted');
+//     ws = null;
+//   }
+// };
 
-onMounted(() => {
-  connectWebSocket(); 
-});
+// onMounted(() => {
+//   connectWebSocket(); 
+// });
 
-onUnmounted(() => {
-  disconnectWebSocket();
-});
+// onUnmounted(() => {
+//   disconnectWebSocket();
+// });
 
-watch(() => authStore.isAuthenticated, (newVal, oldVal) => {
-  if (newVal && !oldVal) {
-    disconnectWebSocket();
-    connectWebSocket();
-  } else if (!newVal && oldVal) {
-    disconnectWebSocket();
-    taskCount.value = null;
-    notificationCount.value = null;
-  }
-}, { immediate: true });
+// watch(() => authStore.isAuthenticated, (newVal, oldVal) => {
+//   if (newVal && !oldVal) {
+//     disconnectWebSocket();
+//     connectWebSocket();
+//   } else if (!newVal && oldVal) {
+//     disconnectWebSocket();
+//     taskCount.value = null;
+//     notificationCount.value = null;
+//   }
+// }, { immediate: true });
 
 const handleLogout = () => {
     authStore.logout();

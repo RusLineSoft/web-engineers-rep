@@ -39,6 +39,7 @@ export default defineEventHandler(async (event) => {
                 tasksCount: user.tasksCount,
                 completedTasks: user.completedTasks,
                 createdAt: user.createdAt,
+                notification: user.notification,
             }
         };
 
