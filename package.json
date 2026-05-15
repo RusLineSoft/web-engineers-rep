@@ -1,0 +1,24 @@
+{
+  "name": "web-engineers",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^0.11.3",
+    "@types/node": "^25.8.0",
+    "bcryptjs": "^3.0.3",
+    "git": "^0.1.5",
+    "mongoose": "^9.6.2",
+    "nuxt": "^4.4.5",
+    "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
+    "vue": "^3.5.34",
+    "vue-router": "^5.0.6"
+  }
+}
