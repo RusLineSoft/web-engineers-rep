@@ -1,5 +1,4 @@
 <script setup>
-  import { SquareBtn } from '~/pages/shared';
   var props = defineProps({
     taskName: {
       type: String,

@@ -96,6 +96,14 @@ const newTask = () => {
 const closeNewTask = () => {
     newTaskWindow.value = false;
 };
+
+const handleMenuAction = (actionType) => {
+  console.log('Действие получено из компонента:', actionType);
+  
+  if (actionType == 'closeNewTask') {
+    newTaskWindow.value = false;
+  }
+};
 </script>
 
 <template>
@@ -148,19 +156,23 @@ const closeNewTask = () => {
     </aside>
     <section style="width: 100%;">
         <div style="padding: 20px;">
-            <button @click="newTask()" style="display: flex; align-items: center; gap: 5px; background: #ffffff35;"><img style="width: 20px; height: 20px;" src="../public/img/plus.svg"> Новая задача</button>
+            <!-- <button style="display: flex; align-items: center; gap: 5px; background: #ffffff35;"><img style="width: 20px; height: 20px;" src="../public/img/plus.svg"> Новая задача</button> -->
+            <CreateTaskBtn @click="newTask()"></CreateTaskBtn>
             <div style="position: absolute; top: 50%; ">
 
             </div>
         </div>
         <div style="padding: 20px;">
-            <!-- Здесь будет канбан-доска, но ее пока нет :) Как из теха вернусь, сделаю -->
+            
         </div>
     </section>
-    <div style="position: absolute; top: 50%; left: 50%; padding: 20px; background: #ffffff11; backdrop-filter: blur(15px); border-radius: 15px; box-shadow: 0 0 20px #00000033;" v-if="newTaskWindow">
+    <!-- <div style="position: absolute; top: 50%; left: 50%; padding: 20px; background: #ffffff11; backdrop-filter: blur(15px); border-radius: 15px; box-shadow: 0 0 20px #00000033;" v-if="newTaskWindow">
         <h2 style="font-family: 'Breakthrough Bold';">Новая задача</h2>
         <button @click="closeNewTask()">Закрыть</button>
-    </div>
+    </div> -->
+    <CreateTaskMenu v-if="newTaskWindow" @action="handleMenuAction">
+
+    </CreateTaskMenu>
 </div>
 </template>
 

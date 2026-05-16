@@ -1,9 +1,8 @@
 <script setup>
-  import { SquareBtn } from '~/pages/shared';
 </script>
 
 <template>
-  <SquareBtn @click="isOpen = !isOpen">
+  <SquareBtn>
     <span class="decorative__plus">+</span>
     <span>Создать задачу</span>
   </SquareBtn>
@@ -12,8 +11,11 @@
 <style scoped>
 span {
   display: block;
+  font-family: 'Breakthrough Bold';
 }
 .decorative__plus {
-  font-size: 67px;
+  font-size: 20px;
+  width: 20px; 
+  height: 20px;
 }
 </style>

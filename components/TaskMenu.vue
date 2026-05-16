@@ -1,7 +1,4 @@
 <script setup>
-  import { SquareMenu } from '~/pages/shared';
-  import { GetValuesStorage } from '..';
-
   var props = defineProps({
     title: {
       type: String,

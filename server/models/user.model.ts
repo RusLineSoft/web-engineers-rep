@@ -31,7 +31,7 @@ interface IUserDocument extends IUser, Document {
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const UserSchema = new Schema<IUserDocument>({ // Указываем интерфейс для схемы
+const UserSchema = new Schema<IUserDocument>({
     userId: { type: String, unique: true, required: true },
     avatar: { type: String, required: true },
     username: { type: String, required: true },
