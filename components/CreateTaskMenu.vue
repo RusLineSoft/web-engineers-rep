@@ -16,27 +16,27 @@ const errorMessage = ref('')
 const tags = [
   {
     label: 'Дизайн',
-    value: 'design',
+    value: 'Дизайн',
     className: 'tag-design'
   },
   {
     label: 'Тестирование',
-    value: 'testing',
+    value: 'Тестирование',
     className: 'tag-testing'
   },
   {
     label: 'Маркетинг',
-    value: 'marketing',
+    value: 'Маркетинг',
     className: 'tag-marketing'
   },
   {
     label: 'Разработка',
-    value: 'development',
+    value: 'Разработка',
     className: 'tag-development'
   },
   {
     label: 'HR-менеджмент',
-    value: 'hr-management',
+    value: 'HR-менеджмент',
     className: 'tag-hr'
   }
 ]
@@ -156,7 +156,7 @@ const createTask = async () => {
               <option value="veryUrgent">Очень срочно</option>
               <option value="urgently">Срочно</option>
               <option value="notUrgently">Не срочно</option>
-              <option value="noPriority">Не приоритетная задача</option>
+              <option value="noPriority">Неприоритетная задача</option>
             </select>
           </div>
         </div>

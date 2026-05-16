@@ -154,18 +154,14 @@ const handleMenuAction = (actionType) => {
         <div class="sidebar-footer">
         </div>
     </aside>
-    <section style="width: 100%;">
+    <section style="width: 100%; height: 100vh;">
         <div style="padding: 20px;">
             <!-- <button style="display: flex; align-items: center; gap: 5px; background: #ffffff35;"><img style="width: 20px; height: 20px;" src="../public/img/plus.svg"> Новая задача</button> -->
             <CreateTaskBtn @click="newTask()"></CreateTaskBtn>
-            <div style="position: absolute; top: 50%; ">
-
-            </div>
         </div>
-        <div style="padding: 20px;">
-            
-        </div>
+        <KanbanBoard></KanbanBoard>
     </section>
+    <!-- <KanbanBoard></KanbanBoard> -->
     <!-- <div style="position: absolute; top: 50%; left: 50%; padding: 20px; background: #ffffff11; backdrop-filter: blur(15px); border-radius: 15px; box-shadow: 0 0 20px #00000033;" v-if="newTaskWindow">
         <h2 style="font-family: 'Breakthrough Bold';">Новая задача</h2>
         <button @click="closeNewTask()">Закрыть</button>

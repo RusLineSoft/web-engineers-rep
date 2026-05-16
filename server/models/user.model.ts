@@ -16,7 +16,7 @@ interface IUser {
     notification?: number;
     currentTasks?: Array<{
         taskId: number;
-        name: string;
+        taskName: string;
         status: string;
         priority: string;
         tags: string;
@@ -46,10 +46,10 @@ const UserSchema = new Schema<IUserDocument>({
     tasksCount: { type: Number, default: 0 },
     currentTasks: [{
         taskId: { type: Number, required: true },
-        name: { type: String, required: true },
+        taskName: { type: String, required: true },
         status: { type: String, required: true },
         priority: { type: String, required: true },
-        tags: { type: String, required: true },
+        tags: { type: [String], default: [] },
         createdAt: { type: Date, default: Date.now, required: true },
         deadline: { type: Date, default: Date.now, required: true },
     }],

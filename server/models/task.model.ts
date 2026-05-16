@@ -2,6 +2,12 @@ import mongoose from 'mongoose'
 
 const TaskSchema = new mongoose.Schema(
   {
+    taskId: {
+      type: Number,
+      required: true,
+      unique: true
+    },
+
     taskName: {
       type: String,
       required: true,
@@ -35,6 +41,14 @@ const TaskSchema = new mongoose.Schema(
         type: Date,
         default: Date.now
     },
+
+    assignedUsers: [
+      {
+        userId: { type: String, required: true },
+        username: { type: String, required: true },
+        avatar: { type: String, required: true }
+      }
+    ],
 
     createdAt: {
         type: Date,
