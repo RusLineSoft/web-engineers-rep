@@ -21,6 +21,8 @@ useHead({
 const taskCount = authStore.user.tasksCount;
 const notificationCount = authStore.user.notification;
 
+const newTaskWindow = ref(false);
+
 // let ws = null;
 
 // const connectWebSocket = () => {
@@ -86,55 +88,80 @@ const handleLogout = () => {
     authStore.logout();
     navigateTo('/login');
 };
+
+const newTask = () => {
+    newTaskWindow.value = true;
+};
+
+const closeNewTask = () => {
+    newTaskWindow.value = false;
+};
 </script>
 
 <template>
-  <aside class="sidebar">
+<div style="display: flex; justify-content: center; align-items: start;">
+    <aside class="sidebar">
 
-    <div class="profile-card">
-      <div class="avatar-wrapper">
-        <img :src="authStore.user?.avatar || 'https://via.placeholder.com/64'" alt="Avatar" class="avatar">
-        <div class="status-indicator" :class="{'online': authStore.isAuthenticated}"></div>
-      </div>
-      <div class="profile-info">
-        <h2 class="username">{{ authStore.user?.username || 'Гость' }}</h2>
-        <span class="rank-badge">{{ authStore.user?.rank || 'Новичок' }}</span>
-      </div>
-      <button @click="handleLogout" class="logout-btn-profile" title="Выйти из аккаунта">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-      </button>
+        <div class="profile-card">
+        <div class="avatar-wrapper">
+            <img :src="authStore.user?.avatar || 'https://via.placeholder.com/64'" alt="Avatar" class="avatar">
+            <div class="status-indicator" :class="{'online': authStore.isAuthenticated}"></div>
+        </div>
+        <div class="profile-info">
+            <h2 class="username">{{ authStore.user?.username || 'Гость' }}</h2>
+            <span class="rank-badge">{{ authStore.user?.rank || 'Новичок' }}</span>
+        </div>
+        <button @click="handleLogout" class="logout-btn-profile" title="Выйти из аккаунта">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        </button>
+        </div>
+
+        <nav class="menu">
+        <button class="menu-item active">
+            <div class="menu-item-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+            <span>Мои задачи</span>
+            </div>
+            <span v-if="taskCount !== null" class="count-badge">{{ taskCount }}</span>
+            <span v-else class="count-badge loading">...</span>
+        </button>
+
+        <button class="menu-item">
+            <div class="menu-item-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <span>Лента событий</span>
+            </div>
+        </button>
+
+        <button class="menu-item">
+            <div class="menu-item-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            <span>Уведомления</span>
+            </div>
+            <span v-if="notificationCount !== null" class="count-badge notify">{{ notificationCount }}</span>
+            <span v-else class="count-badge notify loading">...</span>
+        </button>
+        </nav>
+
+        <div class="sidebar-footer">
+        </div>
+    </aside>
+    <section style="width: 100%;">
+        <div style="padding: 20px;">
+            <button @click="newTask()" style="display: flex; align-items: center; gap: 5px; background: #ffffff35;"><img style="width: 20px; height: 20px;" src="../public/img/plus.svg"> Новая задача</button>
+            <div style="position: absolute; top: 50%; ">
+
+            </div>
+        </div>
+        <div style="padding: 20px;">
+            <!-- Здесь будет канбан-доска, но ее пока нет :) Как из теха вернусь, сделаю -->
+        </div>
+    </section>
+    <div style="position: absolute; top: 50%; left: 50%; padding: 20px; background: #ffffff11; backdrop-filter: blur(15px); border-radius: 15px; box-shadow: 0 0 20px #00000033;" v-if="newTaskWindow">
+        <h2 style="font-family: 'Breakthrough Bold';">Новая задача</h2>
+        <button @click="closeNewTask()">Закрыть</button>
     </div>
-
-    <nav class="menu">
-      <button class="menu-item active">
-        <div class="menu-item-content">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
-          <span>Мои задачи</span>
-        </div>
-        <span v-if="taskCount !== null" class="count-badge">{{ taskCount }}</span>
-        <span v-else class="count-badge loading">...</span>
-      </button>
-
-      <button class="menu-item">
-        <div class="menu-item-content">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <span>Лента событий</span>
-        </div>
-      </button>
-
-      <button class="menu-item">
-        <div class="menu-item-content">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-          <span>Уведомления</span>
-        </div>
-        <span v-if="notificationCount !== null" class="count-badge notify">{{ notificationCount }}</span>
-        <span v-else class="count-badge notify loading">...</span>
-      </button>
-    </nav>
-
-    <div class="sidebar-footer">
-    </div>
-  </aside>
+</div>
 </template>
 
 <style scoped>
