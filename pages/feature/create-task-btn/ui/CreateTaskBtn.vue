@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <SquareBtn>
+  <SquareBtn @click="isOpen = !isOpen">
     <span class="decorative__plus">+</span>
     <span>Создать задачу</span>
   </SquareBtn>
