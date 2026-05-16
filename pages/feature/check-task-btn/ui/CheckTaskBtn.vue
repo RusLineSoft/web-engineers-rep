@@ -1,8 +1,15 @@
 <script setup>
   import { SquareBtn } from '~/pages/shared';
+  var props = defineProps({
+    taskName: {
+      type: String,
+      required: true,
+      default: 'ГДЕ ИМЯ ТАСКИ?!?!',
+    }
+  });
 </script>
 <template>
   <SquareBtn>
-    last task
+  <span>{{ props.taskName }}</span>
   </SquareBtn>
 </template>
