@@ -143,6 +143,7 @@ onUnmounted(() => {
 
     <aside class="page-layout__toggled" v-else-if="!isToggledPageLayout">
       <div @click="isToggledPageLayout = !isToggledPageLayout" class="toggle-btn">=</div>
+      <div @click="newTask()" class="toggle-btn">+</div>
     </aside>
 
 

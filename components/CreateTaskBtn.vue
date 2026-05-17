@@ -1,10 +1,15 @@
 <script setup>
+  var props = defineProps({
+    text: {
+      default: 'Создать задачу',
+    }
+  })
 </script>
 
 <template>
   <SquareBtn>
     <span class="decorative__plus">+</span>
-    <span>Создать задачу</span>
+    <span>{{ props.text }}</span>
   </SquareBtn>
 </template>
 
