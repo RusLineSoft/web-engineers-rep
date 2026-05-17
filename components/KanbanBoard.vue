@@ -253,7 +253,7 @@ onUnmounted(() => {
 .kanban-board {
   display: flex;
   gap: 16px;
-  padding-inline: 2vh;
+  padding-inline: 20px;
   width: 100%;
   max-width: 100%;
   justify-content: center;
