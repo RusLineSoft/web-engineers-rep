@@ -168,7 +168,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 30px;
+  width: 4vh;
   aspect-ratio: 1;
   margin-inline: auto;
   margin-top: 10px;
@@ -189,7 +189,7 @@ onUnmounted(() => {
 }
 
 .page-layout__toggled {
-  width: 40px;
+  width: 6vh;
   height: 100vh;
   background-color: #0f0f12;
   border-right: 1px solid #2d2d35;
