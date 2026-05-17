@@ -1,9 +1,12 @@
 import Task from '~/server/models/task.model'
 import { User } from '~/server/models/user.model'
 import { sendRealtimeEvent } from '~/server/utils/realtime'
+import { createActivityLog } from '~/server/utils/activity'
 
 export default defineEventHandler(async (event) => {
   const taskId = Number(getRouterParam(event, 'id'))
+  const body = await readBody(event).catch(() => ({}))
+  const actorUserId = body.actorUserId?.toString()
 
   if (!taskId) {
     throw createError({
@@ -33,6 +36,14 @@ export default defineEventHandler(async (event) => {
     await user.save()
   }
 
+  await createActivityLog({
+    type: 'task-deleted',
+    title: 'Задача удалена',
+    message: `Задача «${task.taskName}» была удалена`,
+    actorUserId,
+    taskId: task.taskId,
+    taskName: task.taskName
+  })
 
   await Task.deleteOne({ taskId })
 

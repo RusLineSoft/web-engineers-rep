@@ -8,13 +8,12 @@ interface IUser {
   password: string
   rank?: string
   rights?: number
+  isBlocked?: boolean
   telegram?: string
   email: string
   phone?: string
   company?: string
   tasksCount?: number
-  notification?: number
-  notifications?: IUserNotification[]
   currentTasks?: Array<{
     taskId: number
     taskName: string
@@ -32,33 +31,23 @@ interface IUserDocument extends IUser, Document {
   comparePassword(candidatePassword: string): Promise<boolean>
 }
 
-const NotificationSchema = new Schema<IUserNotification>(
-  {
-    notificationId: { type: String, required: true },
-    type: { type: String, required: true },
-    title: { type: String, required: true },
-    message: { type: String, required: true },
-    taskId: { type: Number, default: null },
-    taskName: { type: String, default: '' },
-    createdAt: { type: Date, default: Date.now }
-  },
-  { _id: false }
-)
-
 const UserSchema = new Schema<IUserDocument>({
   userId: { type: String, unique: true, required: true },
   avatar: { type: String, required: true },
   username: { type: String, required: true },
   password: { type: String, required: true },
+
   rank: { type: String, default: 'Сотрудник' },
   rights: { type: Number, default: 0 },
+  isBlocked: { type: Boolean, default: false },
+
   telegram: { type: String, default: '' },
   email: { type: String, unique: true, required: true },
   phone: { type: String, default: '' },
   company: { type: String, default: 'Неизвестно' },
-  notification: { type: Number, default: 0 },
-  notifications: { type: [NotificationSchema], default: [] },
+
   tasksCount: { type: Number, default: 0 },
+
   currentTasks: [
     {
       taskId: { type: Number, required: true },
@@ -70,6 +59,7 @@ const UserSchema = new Schema<IUserDocument>({
       deadline: { type: Date, default: Date.now, required: true }
     }
   ],
+
   completedTasks: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now }
 })

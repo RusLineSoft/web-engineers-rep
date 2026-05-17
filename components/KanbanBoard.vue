@@ -55,28 +55,67 @@ const connectTasksRealtime = () => {
 const takeTask = async (taskId) => {
   await $fetch(`/api/tasks/${taskId}/take`, {
     method: 'POST',
-    body: { userId: authStore.user.userId }
+    body: {
+      userId: authStore.user.userId,
+      actorUserId: authStore.user.userId
+    }
   })
 }
 
 const refuseTask = async (taskId) => {
   await $fetch(`/api/tasks/${taskId}/unassign`, {
     method: 'POST',
-    body: { userId: authStore.user.userId }
+    body: {
+      userId: authStore.user.userId,
+      actorUserId: authStore.user.userId
+    }
   })
 }
 
 const deleteTask = async (taskId) => {
   if (!confirm('Удалить задачу?')) return
+
   await $fetch(`/api/tasks/${taskId}/delete`, {
-    method: 'DELETE'
+    method: 'DELETE',
+    body: {
+      actorUserId: authStore.user.userId
+    }
   })
 }
 
 const completeTask = async (taskId) => {
-  if (!confirm('Завершить и удалить задачу?')) return
-  await $fetch(`/api/tasks/${taskId}/delete`, {
-    method: 'DELETE'
+  if (!confirm('Завершить задачу?')) return
+
+  await $fetch(`/api/tasks/${taskId}/status`, {
+    method: 'PATCH',
+    body: {
+      status: 'Done',
+      actorUserId: authStore.user.userId
+    }
+  })
+}
+
+const assignUser = async (userId) => {
+  await $fetch(`/api/tasks/${assignPopup.value.taskId}/assign`, {
+    method: 'POST',
+    body: {
+      targetUserId: userId,
+      actorUserId: authStore.user.userId
+    }
+  })
+
+  assignPopup.value.visible = false
+}
+
+const onDrop = async (event, status) => {
+  const taskId = Number(event.dataTransfer.getData('taskId'))
+
+  await $fetch(`/api/tasks/${taskId}/status`, {
+    method: 'PATCH',
+    body: {
+      status,
+      actorUserId: authStore.user.userId
+    }
   })
 }
 
@@ -98,14 +137,6 @@ const searchUsers = async () => {
   searchResults.value = res.users
 }
 
-const assignUser = async (userId) => {
-  await $fetch(`/api/tasks/${assignPopup.value.taskId}/assign`, {
-    method: 'POST',
-    body: { targetUserId: userId }
-  })
-  assignPopup.value.visible = false
-}
-
 const openEditTask = (task) => {
   selectedTask.value = task
   editTaskWindow.value = true
@@ -114,15 +145,6 @@ const openEditTask = (task) => {
 const closeEditTask = () => {
   editTaskWindow.value = false
   selectedTask.value = null
-}
-
-const onDrop = async (event, status) => {
-  const taskId = Number(event.dataTransfer.getData('taskId'))
-
-  await $fetch(`/api/tasks/${taskId}/status`, {
-    method: 'PATCH',
-    body: { status }
-  })
 }
 
 const onDragStart = (event, taskId) => {

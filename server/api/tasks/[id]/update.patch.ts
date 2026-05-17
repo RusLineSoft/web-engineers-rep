@@ -1,6 +1,7 @@
 import Task from '~/server/models/task.model'
 import { User } from '~/server/models/user.model'
 import { sendRealtimeEvent } from '~/server/utils/realtime'
+import { createActivityLog } from '~/server/utils/activity'
 
 const parseTags = (value: any): string[] => {
   if (!value) return []
@@ -79,6 +80,23 @@ export default defineEventHandler(async (event) => {
   task.deadline = deadline
 
   await task.save()
+
+  const actorUserId = body.actorUserId?.toString()
+
+  await createActivityLog({
+    type: 'task-updated',
+    title: 'Задача изменена',
+    message: `Задача «${task.taskName}» была изменена`,
+    actorUserId,
+    taskId: task.taskId,
+    taskName: task.taskName,
+    meta: {
+      status: task.status,
+      priority: task.priority,
+      tags: task.tags,
+      deadline: task.deadline
+    }
+  })
 
   for (const userId of oldAssignedIds) {
     const user = await User.findOne({ userId })

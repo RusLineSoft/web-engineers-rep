@@ -1,5 +1,6 @@
 import Task from '~/server/models/task.model'
 import { sendRealtimeEvent } from '~/server/utils/realtime'
+import { createActivityLog } from '~/server/utils/activity'
 
 const generateSixDigitId = () => Math.floor(100000 + Math.random() * 900000)
 
@@ -114,6 +115,17 @@ export default defineEventHandler(async (event) => {
     deadline,
     position,
     assignedUsers: []
+  })
+
+  const actorUserId = body.actorUserId?.toString()
+
+  await createActivityLog({
+    type: 'task-created',
+    title: 'Создана новая задача',
+    message: `Создана задача «${task.taskName}»`,
+    actorUserId,
+    taskId: task.taskId,
+    taskName: task.taskName
   })
 
   sendRealtimeEvent('tasks', {

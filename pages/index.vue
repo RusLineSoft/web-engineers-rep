@@ -26,6 +26,51 @@ const currentTasksWindow = ref(false)
 
 const taskCount = computed(() => userData.value?.tasksCount ?? null)
 const currentTasks = computed(() => userData.value?.currentTasks || [])
+const activityWindow = ref(false)
+const activityLogs = ref([])
+
+let activityEventSource = null
+
+const loadActivityLogs = async () => {
+  const res = await $fetch('/api/activity', {
+    query: {
+      limit: 150
+    }
+  })
+
+  activityLogs.value = res.logs || []
+}
+
+const connectActivityRealtime = () => {
+  if (!authStore.user?.userId) return
+
+  activityEventSource = new EventSource(`/api/realtime/activity?userId=${authStore.user.userId}`)
+
+  activityEventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data)
+
+    if (data.type === 'activity-created') {
+      activityLogs.value = [data.activity, ...activityLogs.value].slice(0, 150)
+    }
+  }
+
+  activityEventSource.onerror = () => {
+    if (activityEventSource) {
+      activityEventSource.close()
+      activityEventSource = null
+    }
+
+    setTimeout(connectActivityRealtime, 3000)
+  }
+}
+
+const openActivityFeed = async () => {
+  activityWindow.value = true
+
+  if (!activityLogs.value.length) {
+    await loadActivityLogs()
+  }
+}
 
 let meEventSource = null
 
@@ -73,15 +118,19 @@ const handleMenuAction = (actionType) => {
 
 onMounted(() => {
   connectMeRealtime()
+  loadActivityLogs()
+  connectActivityRealtime()
 })
 
 onUnmounted(() => {
   if (meEventSource) meEventSource.close()
+  if (activityEventSource) activityEventSource.close()
 })
 </script>
 
 <template>
-  <div class="page-layout">
+  <BlockedUserScreen v-if="userData?.isBlocked" />
+  <div class="page-layout" v-else>
     <aside class="sidebar" v-if="isToggledPageLayout">
       <button @click="isToggledPageLayout = !isToggledPageLayout" class="toggle-aside" style="background: #ffffff35;">Скрыть меню</button>
       <div class="profile-card">
@@ -118,7 +167,7 @@ onUnmounted(() => {
           <span v-else class="count-badge loading">...</span>
         </button>
 
-        <button class="menu-item">
+        <button class="menu-item" @click="openActivityFeed">
           <div class="menu-item-content">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
@@ -126,6 +175,21 @@ onUnmounted(() => {
             <span>Лента событий</span>
           </div>
         </button>
+
+        <NuxtLink
+          v-if="userData?.rights === 1"
+          to="/admin"
+          class="menu-item admin-link"
+        >
+          <div class="menu-item-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l8 4v5c0 5-3.4 9.7-8 11-4.6-1.3-8-6-8-11V7l8-4Z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+
+            <span>Админ-панель</span>
+          </div>
+        </NuxtLink>
       </nav>
 
       <div class="sidebar-footer"></div>
@@ -154,6 +218,11 @@ onUnmounted(() => {
       v-model="currentTasksWindow"
       v-if="currentTasksWindow"
       :tasks="currentTasks"
+    />
+
+    <ActivityFeedModal
+      v-model="activityWindow"
+      :logs="activityLogs"
     />
   </div>
 </template>
@@ -326,5 +395,14 @@ onUnmounted(() => {
   margin-top: auto;
   padding-top: 20px;
   border-top: 1px solid #2d2d35;
+}
+
+.admin-link {
+  text-decoration: none;
+}
+
+.admin-link.router-link-active {
+  background: #8b5cf6;
+  color: #fff;
 }
 </style>

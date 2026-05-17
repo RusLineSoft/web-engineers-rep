@@ -1,7 +1,7 @@
 type Client = {
   id: string
   res: any
-  channel: 'tasks' | 'me'
+  channel: 'tasks' | 'me' | 'activity'
   userId?: string
 }
 

@@ -1,6 +1,7 @@
 import Task from '~/server/models/task.model'
 import { User } from '~/server/models/user.model'
 import { sendRealtimeEvent } from '~/server/utils/realtime'
+import { createActivityLog } from '~/server/utils/activity'
 
 export default defineEventHandler(async (event) => {
   const taskId = Number(getRouterParam(event, 'id'))
@@ -56,6 +57,18 @@ export default defineEventHandler(async (event) => {
 
   await task.save()
   await user.save()
+
+  const actorUserId = body.actorUserId?.toString()
+
+  await createActivityLog({
+    type: 'task-assigned',
+    title: 'Пользователь назначен на задачу',
+    message: `Пользователь ${user.username} назначен на задачу «${task.taskName}»`,
+    actorUserId,
+    targetUserId: targetUserId,
+    taskId: task.taskId,
+    taskName: task.taskName
+  })
 
   sendRealtimeEvent('tasks', { type: 'task-updated', task: task.toObject() })
   sendRealtimeEvent('me', { type: 'user-updated', user: user.toObject() }, targetUserId)

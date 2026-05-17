@@ -1,6 +1,7 @@
 import Task from '~/server/models/task.model'
 import { User } from '~/server/models/user.model'
 import { sendRealtimeEvent } from '~/server/utils/realtime'
+import { createActivityLog } from '~/server/utils/activity'
 
 export default defineEventHandler(async (event) => {
   const taskId = Number(getRouterParam(event, 'id'))
@@ -36,6 +37,20 @@ export default defineEventHandler(async (event) => {
 
   task.status = status
   await task.save()
+
+  const actorUserId = body.actorUserId?.toString()
+
+  await createActivityLog({
+    type: 'task-status-changed',
+    title: 'Статус задачи изменён',
+    message: `Статус задачи «${task.taskName}» изменён на «${status}»`,
+    actorUserId,
+    taskId: task.taskId,
+    taskName: task.taskName,
+    meta: {
+      status
+    }
+  })
 
   for (const userId of assignedUserIds) {
     const user = await User.findOne({ userId })
