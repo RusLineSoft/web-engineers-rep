@@ -24,6 +24,7 @@ npm run dev
 ## Используемые технологии
 
 • **[Nuxt](https://nuxt.com)** — бесплатный фреймворк с открытым исходным кодом для создания типобезопасных, производительных full-stack веб-приложений и сайтов на Vue.js. Основан на Vue.js, Nitro и Vite.
+
 • **[MongoDB](https://mongodb.com)** — документоориентированная система управления базами данных (СУБД), не требующая описания схемы таблиц. Считается одним из классических примеров NoSQL-систем.
 
 В проекте используются следующие зависимости:
@@ -41,3 +42,30 @@ npm run dev
 }
 ```
 
+## Работа с MongoDB
+
+В MongoDB создайте базу данных с именем Kanban. В коллекцию users загрузите следующий json:
+```json
+{
+  "userId": "00000001",
+  "avatar": "/_nuxt/public/img/default-avatar.png",
+  "username": "Кот Котов",
+  "password": "$2b$10$5iYlVx1ZloTJ735lZj95ceWF4BJIO7YFNonpS7LZre.vQeBZ0RJ0K",
+  "email": "admin@example.com",
+  "rank": "Администратор",
+  "rights": 1,
+  "telegram": "@demouser",
+  "company": "Web Engineers",
+  "tasksCount": 1,
+  "completedTasks": 347,
+  "notification": 1,
+  "createdAt": {
+    "$date": "2026-01-01T00:00:00.000Z"
+  },
+  "__v": 112,
+  "currentTasks": [],
+  "phone": "",
+  "notifications": [],
+  "isBlocked": false,
+  "mustChangePassword": true
+}
