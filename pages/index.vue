@@ -4,9 +4,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const authStore = useAuthStore()
 
-definePageMeta({
-  middleware: ['auth']
-})
+//definePageMeta({
+ // middleware: ['auth']
+//})
 
 useHead({
   title: 'Канбан-доска // Web Engineers',
@@ -17,6 +17,8 @@ useHead({
     }
   ]
 })
+
+const isToggledPageLayout = ref(false)
 
 const userData = ref(null)
 const newTaskWindow = ref(false)
@@ -80,7 +82,8 @@ onUnmounted(() => {
 
 <template>
   <div class="page-layout">
-    <aside class="sidebar">
+    <aside class="sidebar" v-if="isToggledPageLayout">
+      <button @click="isToggledPageLayout = !isToggledPageLayout" class="toggle-aside" style="background: #ffffff35;">Скрыть меню</button>
       <div class="profile-card">
         <div class="avatar-wrapper">
           <img :src="userData?.avatar || 'https://via.placeholder.com/64'" alt="Avatar" class="avatar">
@@ -128,6 +131,12 @@ onUnmounted(() => {
       <div class="sidebar-footer"></div>
     </aside>
 
+
+    <aside class="page-layout__toggled" v-else-if="!isToggledPageLayout">
+      <div @click="isToggledPageLayout = !isToggledPageLayout" class="toggle-btn">⚡</div>
+    </aside>
+
+
     <section class="content">
       <div class="content-top">
         <CreateTaskBtn @click="newTask()" />
@@ -150,24 +159,51 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.toggle-aside {
+  display: inline-block;
+  margin-block: 16px;
+}
+
+.toggle-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 4vh;
+  aspect-ratio: 1;
+  margin-inline: auto;
+  margin-top: 10px;
+  background-color: #191919;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+.toggle-btn:hover {
+  background-color: #292929;
+}
+
 .page-layout {
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
-  width: 100%;
-  min-height: 100vh;
   overflow: hidden;
 }
 
-.sidebar {
+.page-layout__toggled {
+  width: 6vh;
   height: 100vh;
-  width: 300px;
+  background-color: #0f0f12;
+  border-right: 1px solid #2d2d35;
+}
+
+.sidebar {
+  display: flex;
+  height: 100vh;
+  width: 100vh;
   flex: 0 0 300px;
   background-color: #0f0f12;
   color: #efeff1;
-  display: flex;
   flex-direction: column;
-  padding: 32px 20px;
+  padding: 2vh;
   border-right: 1px solid #2d2d35;
   font-family: 'Inter', sans-serif;
   box-sizing: border-box;
