@@ -21,7 +21,11 @@ export const removeRealtimeClient = (id: string) => {
   if (index !== -1) clients.splice(index, 1)
 }
 
-export const sendRealtimeEvent = (channel: Client['channel'], payload: any, userId?: string) => {
+export const sendRealtimeEvent = (
+  channel: Client['channel'],
+  payload: any,
+  userId?: string
+) => {
   const message = `data: ${JSON.stringify(payload)}\n\n`
 
   clients.forEach((client) => {

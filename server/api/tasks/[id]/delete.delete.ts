@@ -25,24 +25,14 @@ export default defineEventHandler(async (event) => {
 
   for (const userId of assignedUserIds) {
     const user = await User.findOne({ userId })
-
     if (!user) continue
 
     user.currentTasks = (user.currentTasks || []).filter((t: any) => t.taskId !== task.taskId)
     user.tasksCount = user.currentTasks.length
 
     await user.save()
-
-    sendRealtimeEvent(
-      'me',
-      {
-        type: 'user-updated',
-        userId,
-        user: user.toObject()
-      },
-      userId
-    )
   }
+
 
   await Task.deleteOne({ taskId })
 
@@ -50,6 +40,13 @@ export default defineEventHandler(async (event) => {
     type: 'task-deleted',
     taskId
   })
+
+  for (const userId of assignedUserIds) {
+    const user = await User.findOne({ userId }).select('-password')
+    if (user) {
+      sendRealtimeEvent('me', { type: 'user-updated', user }, userId)
+    }
+  }
 
   return {
     success: true,

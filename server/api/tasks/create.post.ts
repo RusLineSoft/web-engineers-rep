@@ -49,10 +49,7 @@ const parseTags = (value: any): string[] => {
       }
     } catch {}
 
-    return trimmed
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
+    return trimmed.split(',').map((t) => t.trim()).filter(Boolean)
   }
 
   return []

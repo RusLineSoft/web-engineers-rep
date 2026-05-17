@@ -20,9 +20,10 @@ useHead({
 
 const userData = ref(null)
 const newTaskWindow = ref(false)
+const currentTasksWindow = ref(false)
 
 const taskCount = computed(() => userData.value?.tasksCount ?? null)
-const notificationCount = computed(() => userData.value?.notification ?? null)
+const currentTasks = computed(() => userData.value?.currentTasks || [])
 
 let meEventSource = null
 
@@ -44,6 +45,7 @@ const connectMeRealtime = () => {
       meEventSource.close()
       meEventSource = null
     }
+
     setTimeout(connectMeRealtime, 3000)
   }
 }
@@ -57,8 +59,8 @@ const newTask = () => {
   newTaskWindow.value = true
 }
 
-const closeNewTask = () => {
-  newTaskWindow.value = false
+const openCurrentTasks = () => {
+  currentTasksWindow.value = true
 }
 
 const handleMenuAction = (actionType) => {
@@ -100,7 +102,7 @@ onUnmounted(() => {
       </div>
 
       <nav class="menu">
-        <button class="menu-item active">
+        <button class="menu-item active" @click="openCurrentTasks">
           <div class="menu-item-content">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -108,6 +110,7 @@ onUnmounted(() => {
             </svg>
             <span>Мои задачи</span>
           </div>
+
           <span v-if="taskCount !== null" class="count-badge">{{ taskCount }}</span>
           <span v-else class="count-badge loading">...</span>
         </button>
@@ -119,18 +122,6 @@ onUnmounted(() => {
             </svg>
             <span>Лента событий</span>
           </div>
-        </button>
-
-        <button class="menu-item">
-          <div class="menu-item-content">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-            </svg>
-            <span>Уведомления</span>
-          </div>
-          <span v-if="notificationCount !== null" class="count-badge notify">{{ notificationCount }}</span>
-          <span v-else class="count-badge notify loading">...</span>
         </button>
       </nav>
 
@@ -145,7 +136,16 @@ onUnmounted(() => {
       <KanbanBoard />
     </section>
 
-    <CreateTaskMenu v-if="newTaskWindow" @action="handleMenuAction" />
+    <CreateTaskMenu
+      v-if="newTaskWindow"
+      @action="handleMenuAction"
+    />
+
+    <CurrentTasksModal
+      v-model="currentTasksWindow"
+      v-if="currentTasksWindow"
+      :tasks="currentTasks"
+    />
   </div>
 </template>
 
@@ -284,10 +284,6 @@ onUnmounted(() => {
   padding: 2px 8px;
   border-radius: 8px;
   color: #fff;
-}
-
-.count-badge.notify {
-  background: #ef4444;
 }
 
 .sidebar-footer {

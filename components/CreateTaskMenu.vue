@@ -1,48 +1,37 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-const emit = defineEmits(['action', 'created'])
+const props = defineProps({
+  task: {
+    type: Object,
+    default: null
+  }
+})
 
-const taskName = ref('')
-const description = ref('')
-const status = ref('To Do')
-const priority = ref('notUrgently')
-const selectedTags = ref([])
-const deadline = ref('')
+const emit = defineEmits(['action', 'created', 'updated'])
+
+const isEditMode = computed(() => !!props.task)
+
+const taskName = ref(props.task?.taskName || '')
+const description = ref(props.task?.description || '')
+const status = ref(props.task?.status || 'To Do')
+const priority = ref(props.task?.priority || 'notUrgently')
+const selectedTags = ref(props.task?.tags ? [...props.task.tags] : [])
+const deadline = ref(props.task?.deadline ? new Date(props.task.deadline).toISOString().slice(0, 10) : '')
 
 const isLoading = ref(false)
 const errorMessage = ref('')
 
 const tags = [
-  {
-    label: 'Дизайн',
-    value: 'design',
-    className: 'tag-design'
-  },
-  {
-    label: 'Тестирование',
-    value: 'testing',
-    className: 'tag-testing'
-  },
-  {
-    label: 'Маркетинг',
-    value: 'marketing',
-    className: 'tag-marketing'
-  },
-  {
-    label: 'Разработка',
-    value: 'development',
-    className: 'tag-development'
-  },
-  {
-    label: 'HR-менеджмент',
-    value: 'hr-management',
-    className: 'tag-hr'
-  }
+  { label: 'Дизайн', value: 'design', className: 'tag-design' },
+  { label: 'Тестирование', value: 'testing', className: 'tag-testing' },
+  { label: 'Маркетинг', value: 'marketing', className: 'tag-marketing' },
+  { label: 'Разработка', value: 'development', className: 'tag-development' },
+  { label: 'HR-менеджмент', value: 'hr-management', className: 'tag-hr' }
 ]
 
 const closeWindow = () => {
-  emit('action', 'closeNewTask')
+  emit('action', isEditMode.value ? 'closeEditTask' : 'closeNewTask')
 }
 
 const toggleTag = (tagValue) => {
@@ -53,11 +42,9 @@ const toggleTag = (tagValue) => {
   }
 }
 
-const isTagSelected = (tagValue) => {
-  return selectedTags.value.includes(tagValue)
-}
+const isTagSelected = (tagValue) => selectedTags.value.includes(tagValue)
 
-const createTask = async () => {
+const saveTask = async () => {
   errorMessage.value = ''
 
   if (!taskName.value.trim()) {
@@ -68,30 +55,34 @@ const createTask = async () => {
   isLoading.value = true
 
   try {
-    const createdTask = await $fetch('/api/tasks/create', {
-      method: 'POST',
-      body: {
-        taskName: taskName.value.trim(),
-        description: description.value.trim(),
-        status: status.value,
-        priority: priority.value,
-        tags: selectedTags.value,
-        deadline: deadline.value ? new Date(deadline.value).toISOString() : null
-      }
-    })
+    const body = {
+      taskName: taskName.value.trim(),
+      description: description.value.trim(),
+      status: status.value,
+      priority: priority.value,
+      tags: selectedTags.value,
+      deadline: deadline.value ? new Date(deadline.value).toISOString() : null
+    }
 
-    emit('created', createdTask)
+    if (isEditMode.value) {
+      await $fetch(`/api/tasks/${props.task.taskId}/update`, {
+        method: 'PATCH',
+        body
+      })
 
-    taskName.value = ''
-    description.value = ''
-    status.value = 'To Do'
-    priority.value = 'notUrgently'
-    selectedTags.value = []
-    deadline.value = ''
+      emit('updated')
+    } else {
+      const createdTask = await $fetch('/api/tasks/create', {
+        method: 'POST',
+        body
+      })
+
+      emit('created', createdTask)
+    }
 
     closeWindow()
   } catch (error) {
-    errorMessage.value = error?.data?.message || 'Ошибка при создании задачи'
+    errorMessage.value = error?.data?.message || 'Ошибка при сохранении задачи'
   } finally {
     isLoading.value = false
   }
@@ -103,13 +94,11 @@ const createTask = async () => {
     <div class="create-task-modal">
       <div class="modal-header">
         <div>
-          <h2>Новая задача</h2>
-          <p>Создайте новый стикер для канбан-доски</p>
+          <h2>{{ isEditMode ? 'Редактировать задачу' : 'Новая задача' }}</h2>
+          <p>{{ isEditMode ? 'Измените параметры задачи' : 'Создайте новый стикер для канбан-доски' }}</p>
         </div>
 
-        <button class="close-button" type="button" @click="closeWindow">
-          ×
-        </button>
+        <button class="close-button" type="button" @click="closeWindow">×</button>
       </div>
 
       <div class="form">
@@ -180,13 +169,8 @@ const createTask = async () => {
               ]"
               @click="toggleTag(tag.value)"
             >
-              <span class="tag-check">
-                ✓
-              </span>
-
-              <span>
-                {{ tag.label }}
-              </span>
+              <span class="tag-check">✓</span>
+              <span>{{ tag.label }}</span>
             </button>
           </div>
         </div>
@@ -204,9 +188,9 @@ const createTask = async () => {
             class="create-button"
             type="button"
             :disabled="isLoading"
-            @click="createTask"
+            @click="saveTask"
           >
-            {{ isLoading ? 'Создание...' : 'Создать задачу' }}
+            {{ isLoading ? (isEditMode ? 'Сохранение...' : 'Создание...') : (isEditMode ? 'Сохранить изменения' : 'Создать задачу') }}
           </button>
         </div>
       </div>

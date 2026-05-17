@@ -1,4 +1,5 @@
 import Task from '~/server/models/task.model'
+import { User } from '~/server/models/user.model'
 import { sendRealtimeEvent } from '~/server/utils/realtime'
 
 export default defineEventHandler(async (event) => {
@@ -22,11 +23,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const task = await Task.findOneAndUpdate(
-    { taskId },
-    { status },
-    { new: true }
-  )
+  const task = await Task.findOne({ taskId })
 
   if (!task) {
     throw createError({
@@ -35,7 +32,31 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  const assignedUserIds = (task.assignedUsers || []).map((u: any) => u.userId)
+
+  task.status = status
+  await task.save()
+
+  for (const userId of assignedUserIds) {
+    const user = await User.findOne({ userId })
+    if (!user) continue
+
+    const currentTask = (user.currentTasks || []).find((t: any) => t.taskId === task.taskId)
+    if (currentTask) {
+      currentTask.status = status
+      user.currentTasks = [...(user.currentTasks || [])]
+      await user.save()
+    }
+  }
+
   sendRealtimeEvent('tasks', { type: 'task-updated', task: task.toObject() })
+
+  for (const userId of assignedUserIds) {
+    const user = await User.findOne({ userId }).select('-password')
+    if (user) {
+      sendRealtimeEvent('me', { type: 'user-updated', user }, userId)
+    }
+  }
 
   return {
     success: true,

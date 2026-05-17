@@ -18,17 +18,11 @@ export default defineEventHandler(async (event) => {
   const user = await User.findOne({ userId: targetUserId })
 
   if (!task) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'Task not found'
-    })
+    throw createError({ statusCode: 404, statusMessage: 'Task not found' })
   }
 
   if (!user) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: 'User not found'
-    })
+    throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
 
   const alreadyAssigned = task.assignedUsers?.some((u: any) => u.userId === targetUserId)
@@ -64,7 +58,7 @@ export default defineEventHandler(async (event) => {
   await user.save()
 
   sendRealtimeEvent('tasks', { type: 'task-updated', task: task.toObject() })
-  sendRealtimeEvent('me', { type: 'user-updated', userId: targetUserId, user: user.toObject() }, targetUserId)
+  sendRealtimeEvent('me', { type: 'user-updated', user: user.toObject() }, targetUserId)
 
   return {
     success: true,

@@ -13,26 +13,17 @@ const assignPopup = ref({
   taskId: null
 })
 
+const editTaskWindow = ref(false)
+const selectedTask = ref(null)
+
 const { data: tasksData, refresh } = await useAsyncData('tasks', () => $fetch('/api/tasks'))
 const tasks = computed(() => tasksData.value?.tasks || [])
 
 const priorityMap = {
-  noPriority: {
-    label: 'Неприоритетная задача',
-    class: 'priority-noPriority'
-  },
-  notUrgently: {
-    label: 'Не срочно',
-    class: 'priority-notUrgently'
-  },
-  urgently: {
-    label: 'Срочно',
-    class: 'priority-urgently'
-  },
-  veryUrgent: {
-    label: 'Очень срочно',
-    class: 'priority-veryUrgent'
-  }
+  noPriority: { label: 'Неприоритетная задача', class: 'priority-noPriority' },
+  notUrgently: { label: 'Не срочно', class: 'priority-notUrgently' },
+  urgently: { label: 'Срочно', class: 'priority-urgently' },
+  veryUrgent: { label: 'Очень срочно', class: 'priority-veryUrgent' }
 }
 
 const columns = computed(() => ({
@@ -77,7 +68,13 @@ const refuseTask = async (taskId) => {
 
 const deleteTask = async (taskId) => {
   if (!confirm('Удалить задачу?')) return
+  await $fetch(`/api/tasks/${taskId}/delete`, {
+    method: 'DELETE'
+  })
+}
 
+const completeTask = async (taskId) => {
+  if (!confirm('Завершить и удалить задачу?')) return
   await $fetch(`/api/tasks/${taskId}/delete`, {
     method: 'DELETE'
   })
@@ -104,11 +101,19 @@ const searchUsers = async () => {
 const assignUser = async (userId) => {
   await $fetch(`/api/tasks/${assignPopup.value.taskId}/assign`, {
     method: 'POST',
-    body: {
-      targetUserId: userId
-    }
+    body: { targetUserId: userId }
   })
   assignPopup.value.visible = false
+}
+
+const openEditTask = (task) => {
+  selectedTask.value = task
+  editTaskWindow.value = true
+}
+
+const closeEditTask = () => {
+  editTaskWindow.value = false
+  selectedTask.value = null
 }
 
 const onDrop = async (event, status) => {
@@ -158,11 +163,21 @@ onUnmounted(() => {
           draggable="true"
           @dragstart="onDragStart($event, task.taskId)"
         >
+          <button
+            v-if="authStore.user?.rights === 1"
+            class="edit-btn"
+            type="button"
+            title="Редактировать"
+            @click.stop="openEditTask(task)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
+
           <div class="task-header">
             <h4>{{ task.taskName }}</h4>
-            <span class="priority-badge" :class="priorityMap[task.priority]?.class">
-              {{ priorityMap[task.priority]?.label || task.priority }}
-            </span>
           </div>
 
           <p class="description">{{ task.description }}</p>
@@ -170,7 +185,10 @@ onUnmounted(() => {
           <div class="tags">
             <span v-for="tag in task.tags" :key="tag" class="tag">{{ tag }}</span>
             <span class="tag">
-              {{ new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+              До {{ new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+            </span>
+            <span class="tag" style="color: #FFF" :class="priorityMap[task.priority]?.class">
+              {{ priorityMap[task.priority]?.label || task.priority }}
             </span>
           </div>
 
@@ -216,6 +234,14 @@ onUnmounted(() => {
 
             <button
               v-if="authStore.user?.rights === 1"
+              @click="completeTask(task.taskId)"
+              class="complete-btn"
+            >
+              Завершить задачу
+            </button>
+
+            <button
+              v-if="authStore.user?.rights === 1"
               @click="deleteTask(task.taskId)"
               class="delete-btn"
             >
@@ -246,6 +272,13 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <CreateTaskMenu
+      v-if="editTaskWindow && selectedTask"
+      :task="selectedTask"
+      @action="closeEditTask"
+      @updated="closeEditTask"
+    />
   </div>
 </template>
 
@@ -287,6 +320,7 @@ onUnmounted(() => {
 }
 
 .task-sticker {
+  position: relative;
   background: #17171c;
   border: 1px solid #2d2d35;
   border-radius: 16px;
@@ -301,10 +335,31 @@ onUnmounted(() => {
   cursor: grabbing;
 }
 
+.edit-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background: rgba(59, 130, 246, 0.24);
+  color: #fff;
+}
+
 .task-header {
   display: flex;
   justify-content: space-between;
   gap: 10px;
+  padding-right: 40px;
 }
 
 .task-header h4 {
@@ -347,32 +402,19 @@ onUnmounted(() => {
 .take-btn,
 .assign-btn,
 .refuse-btn,
-.delete-btn {
+.delete-btn,
+.complete-btn {
   border: none;
   border-radius: 10px;
   padding: 10px 12px;
   cursor: pointer;
 }
 
-.take-btn {
-  background: #3b82f6;
-  color: #fff;
-}
-
-.refuse-btn {
-  background: #ef4444;
-  color: #fff;
-}
-
-.assign-btn {
-  background: #8b5cf6;
-  color: #fff;
-}
-
-.delete-btn {
-  background: #991b1b;
-  color: #fff;
-}
+.take-btn { background: #3b82f6; color: #fff; }
+.refuse-btn { background: #ef4444; color: #fff; }
+.assign-btn { background: #8b5cf6; color: #fff; }
+.complete-btn { background: #16a34a; color: #fff; }
+.delete-btn { background: #991b1b; color: #fff; }
 
 .assigned-users {
   display: flex;
