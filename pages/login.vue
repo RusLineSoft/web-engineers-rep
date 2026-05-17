@@ -2,10 +2,10 @@
 import { ref } from 'vue';
 import { useHead } from '#app';
 import { useAuthStore } from '~/stores/auth';
-definePageMeta({
-  middleware: ["is-auth"]
+//definePageMeta({
+ // middleware: ["is-auth"]
 
-})
+//})
 
 const authStore = useAuthStore();
 

@@ -4,9 +4,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const authStore = useAuthStore()
 
-definePageMeta({
-  middleware: ['auth']
-})
+//definePageMeta({
+ // middleware: ['auth']
+//})
 
 useHead({
   title: 'Канбан-доска // Web Engineers',
