@@ -1,181 +1,168 @@
 <script setup>
-import { useAuthStore } from '@/stores/auth';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useAuthStore } from '@/stores/auth'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-let authStore = useAuthStore();
+const authStore = useAuthStore()
 
 definePageMeta({
-  middleware: ["auth"]
+  middleware: ['auth']
 })
 
 useHead({
-    title: 'Канбан-доска // Web Engineers',
-    meta: [
-        { 
-            name: 'description', 
-            content: 'Страница авторизации для сотрудников компании' 
-        },
-    ],
-});
+  title: 'Канбан-доска // Web Engineers',
+  meta: [
+    {
+      name: 'description',
+      content: 'Страница авторизации для сотрудников компании'
+    }
+  ]
+})
 
-const taskCount = authStore.user.tasksCount;
-const notificationCount = authStore.user.notification;
+const userData = ref(null)
+const newTaskWindow = ref(false)
 
-const newTaskWindow = ref(false);
+const taskCount = computed(() => userData.value?.tasksCount ?? null)
+const notificationCount = computed(() => userData.value?.notification ?? null)
 
-// let ws = null;
+let meEventSource = null
 
-// const connectWebSocket = () => {
-//   if (!authStore.isAuthenticated || !authStore.user?.userId) {
-//     console.warn('Невозможно подключиться к WebSocket: пользователь не аутентифицирован или нет ID.');
-//     return;
-//   }
+const connectMeRealtime = () => {
+  if (!authStore.user?.userId) return
 
-//   ws = new WebSocket('ws://localhost:8080/ws?userId=${authStore.user.userId}'); 
+  meEventSource = new EventSource(`/api/realtime/me?userId=${authStore.user.userId}`)
 
-//   ws.onopen = () => {
-//     console.log('WebSocket-соединение установлено.');
-//   };
-//   ws.onmessage = (event) => {
-//     const data = JSON.parse(event.data);
-    
-//     if (data.type === 'initialData' || data.type === 'update') {
-//       taskCount.value = data.tasks;
-//       notificationCount.value = data.notifications;
-//     }
-//   };
+  meEventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data)
 
-//   ws.onerror = (error) => {
-//     console.error('Ошибка WebSocket:', error);
-//   };
+    if (data.type === 'initial' || data.type === 'user-updated') {
+      userData.value = data.user
+    }
+  }
 
-//   ws.onclose = (event) => {
-//     console.log('WebSocket-соединение закрыто:', event.code, event.reason);
-//     if (!event.wasClean) {
-//       console.log('Попытка переподключения через 3 секунды...');
-//       setTimeout(connectWebSocket, 3000); 
-//     }
-//   };
-// };
-
-// const disconnectWebSocket = () => {
-//   if (ws) {
-//     ws.close(1000, 'Component unmounted');
-//     ws = null;
-//   }
-// };
-
-// onMounted(() => {
-//   connectWebSocket(); 
-// });
-
-// onUnmounted(() => {
-//   disconnectWebSocket();
-// });
-
-// watch(() => authStore.isAuthenticated, (newVal, oldVal) => {
-//   if (newVal && !oldVal) {
-//     disconnectWebSocket();
-//     connectWebSocket();
-//   } else if (!newVal && oldVal) {
-//     disconnectWebSocket();
-//     taskCount.value = null;
-//     notificationCount.value = null;
-//   }
-// }, { immediate: true });
+  meEventSource.onerror = () => {
+    if (meEventSource) {
+      meEventSource.close()
+      meEventSource = null
+    }
+    setTimeout(connectMeRealtime, 3000)
+  }
+}
 
 const handleLogout = () => {
-    authStore.logout();
-    navigateTo('/login');
-};
+  authStore.logout()
+  navigateTo('/login')
+}
 
 const newTask = () => {
-    newTaskWindow.value = true;
-};
+  newTaskWindow.value = true
+}
 
 const closeNewTask = () => {
-    newTaskWindow.value = false;
-};
+  newTaskWindow.value = false
+}
 
 const handleMenuAction = (actionType) => {
-  console.log('Действие получено из компонента:', actionType);
-  
-  if (actionType == 'closeNewTask') {
-    newTaskWindow.value = false;
+  if (actionType === 'closeNewTask') {
+    newTaskWindow.value = false
   }
-};
+}
+
+onMounted(() => {
+  connectMeRealtime()
+})
+
+onUnmounted(() => {
+  if (meEventSource) meEventSource.close()
+})
 </script>
 
 <template>
-<div style="display: flex; justify-content: center; align-items: start;">
+  <div class="page-layout">
     <aside class="sidebar">
-
-        <div class="profile-card">
+      <div class="profile-card">
         <div class="avatar-wrapper">
-            <img :src="authStore.user?.avatar || 'https://via.placeholder.com/64'" alt="Avatar" class="avatar">
-            <div class="status-indicator" :class="{'online': authStore.isAuthenticated}"></div>
+          <img :src="userData?.avatar || 'https://via.placeholder.com/64'" alt="Avatar" class="avatar">
+          <div class="status-indicator" :class="{ online: authStore.isAuthenticated }"></div>
         </div>
+
         <div class="profile-info">
-            <h2 class="username">{{ authStore.user?.username || 'Гость' }}</h2>
-            <span class="rank-badge">{{ authStore.user?.rank || 'Новичок' }}</span>
+          <h2 class="username">{{ userData?.username || 'Загрузка...' }}</h2>
+          <span class="rank-badge">{{ userData?.rank || '...' }}</span>
         </div>
+
         <button @click="handleLogout" class="logout-btn-profile" title="Выйти из аккаунта">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" x2="9" y1="12" y2="12"/>
+          </svg>
         </button>
-        </div>
+      </div>
 
-        <nav class="menu">
+      <nav class="menu">
         <button class="menu-item active">
-            <div class="menu-item-content">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+          <div class="menu-item-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/>
+            </svg>
             <span>Мои задачи</span>
-            </div>
-            <span v-if="taskCount !== null" class="count-badge">{{ taskCount }}</span>
-            <span v-else class="count-badge loading">...</span>
+          </div>
+          <span v-if="taskCount !== null" class="count-badge">{{ taskCount }}</span>
+          <span v-else class="count-badge loading">...</span>
         </button>
 
         <button class="menu-item">
-            <div class="menu-item-content">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <div class="menu-item-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
             <span>Лента событий</span>
-            </div>
+          </div>
         </button>
 
         <button class="menu-item">
-            <div class="menu-item-content">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <div class="menu-item-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
             <span>Уведомления</span>
-            </div>
-            <span v-if="notificationCount !== null" class="count-badge notify">{{ notificationCount }}</span>
-            <span v-else class="count-badge notify loading">...</span>
+          </div>
+          <span v-if="notificationCount !== null" class="count-badge notify">{{ notificationCount }}</span>
+          <span v-else class="count-badge notify loading">...</span>
         </button>
-        </nav>
+      </nav>
 
-        <div class="sidebar-footer">
-        </div>
+      <div class="sidebar-footer"></div>
     </aside>
-    <section style="width: 100%; height: 100vh;">
-        <div style="padding: 20px;">
-            <!-- <button style="display: flex; align-items: center; gap: 5px; background: #ffffff35;"><img style="width: 20px; height: 20px;" src="../public/img/plus.svg"> Новая задача</button> -->
-            <CreateTaskBtn @click="newTask()"></CreateTaskBtn>
-        </div>
-        <KanbanBoard></KanbanBoard>
-    </section>
-    <!-- <KanbanBoard></KanbanBoard> -->
-    <!-- <div style="position: absolute; top: 50%; left: 50%; padding: 20px; background: #ffffff11; backdrop-filter: blur(15px); border-radius: 15px; box-shadow: 0 0 20px #00000033;" v-if="newTaskWindow">
-        <h2 style="font-family: 'Breakthrough Bold';">Новая задача</h2>
-        <button @click="closeNewTask()">Закрыть</button>
-    </div> -->
-    <CreateTaskMenu v-if="newTaskWindow" @action="handleMenuAction">
 
-    </CreateTaskMenu>
-</div>
+    <section class="content">
+      <div class="content-top">
+        <CreateTaskBtn @click="newTask()" />
+      </div>
+
+      <KanbanBoard />
+    </section>
+
+    <CreateTaskMenu v-if="newTaskWindow" @action="handleMenuAction" />
+  </div>
 </template>
 
 <style scoped>
+.page-layout {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
 .sidebar {
   height: 100vh;
   width: 300px;
+  flex: 0 0 300px;
   background-color: #0f0f12;
   color: #efeff1;
   display: flex;
@@ -183,6 +170,18 @@ const handleMenuAction = (actionType) => {
   padding: 32px 20px;
   border-right: 1px solid #2d2d35;
   font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+}
+
+.content {
+  width: 100%;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.content-top {
+  padding: 20px;
 }
 
 .profile-card {
@@ -193,7 +192,6 @@ const handleMenuAction = (actionType) => {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;
   margin-bottom: 40px;
-  transition: transform 0.2s;
 }
 
 .avatar-wrapper {
@@ -243,23 +241,12 @@ const handleMenuAction = (actionType) => {
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
-  transition: color 0.2s, background-color 0.2s;
   margin-left: auto;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.logout-btn-profile:hover {
-  color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.2);
-}
-
-.logout-btn-profile svg {
-  display: block;
-}
-
-/* Меню */
 .menu {
   flex: 1;
   display: flex;
@@ -277,12 +264,6 @@ const handleMenuAction = (actionType) => {
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
 }
 
 .menu-item.active {
@@ -313,25 +294,5 @@ const handleMenuAction = (actionType) => {
   margin-top: auto;
   padding-top: 20px;
   border-top: 1px solid #2d2d35;
-}
-
-.logout-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px;
-  background: transparent;
-  border: 1px solid #3f3f46;
-  border-radius: 12px;
-  color: #f4f4f5;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.logout-btn:hover {
-  background: #ef4444;
-  border-color: #ef4444;
 }
 </style>

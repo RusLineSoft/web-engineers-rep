@@ -31,33 +31,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const alreadyAssigned = task.assignedUsers?.some((u: any) => u.userId === userId)
-
-  if (!alreadyAssigned) {
-    task.assignedUsers.push({
-      userId: user.userId,
-      username: user.username,
-      avatar: user.avatar
-    })
-  }
-
-  const currentTaskExists = (user.currentTasks || []).some((t: any) => t.taskId === task.taskId)
-
-  if (!currentTaskExists) {
-    user.currentTasks = [
-      ...(user.currentTasks || []),
-      {
-        taskId: task.taskId,
-        taskName: task.taskName,
-        status: task.status,
-        priority: task.priority,
-        tags: task.tags,
-        createdAt: task.createdAt,
-        deadline: task.deadline
-      }
-    ]
-  }
-
+  task.assignedUsers = (task.assignedUsers || []).filter((u: any) => u.userId !== userId)
+  user.currentTasks = (user.currentTasks || []).filter((t: any) => t.taskId !== task.taskId)
   user.tasksCount = user.currentTasks.length
 
   await task.save()

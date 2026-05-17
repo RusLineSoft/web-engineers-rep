@@ -1,10 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 
-const tasks = ref([])
 const searchQuery = ref('')
 const searchResults = ref([])
 const assignPopup = ref({
@@ -13,6 +12,9 @@ const assignPopup = ref({
   y: 0,
   taskId: null
 })
+
+const { data: tasksData, refresh } = await useAsyncData('tasks', () => $fetch('/api/tasks'))
+const tasks = computed(() => tasksData.value?.tasks || [])
 
 const priorityMap = {
   noPriority: {
@@ -39,9 +41,24 @@ const columns = computed(() => ({
   'Done': tasks.value.filter(t => t.status === 'Done')
 }))
 
-const fetchTasks = async () => {
-  const res = await $fetch('/api/tasks')
-  tasks.value = res.tasks
+let tasksEventSource = null
+
+const connectTasksRealtime = () => {
+  if (!authStore.user?.userId) return
+
+  tasksEventSource = new EventSource(`/api/realtime/tasks?userId=${authStore.user.userId}`)
+
+  tasksEventSource.onmessage = async () => {
+    await refresh()
+  }
+
+  tasksEventSource.onerror = () => {
+    if (tasksEventSource) {
+      tasksEventSource.close()
+      tasksEventSource = null
+    }
+    setTimeout(connectTasksRealtime, 3000)
+  }
 }
 
 const takeTask = async (taskId) => {
@@ -49,7 +66,21 @@ const takeTask = async (taskId) => {
     method: 'POST',
     body: { userId: authStore.user.userId }
   })
-  await fetchTasks()
+}
+
+const refuseTask = async (taskId) => {
+  await $fetch(`/api/tasks/${taskId}/unassign`, {
+    method: 'POST',
+    body: { userId: authStore.user.userId }
+  })
+}
+
+const deleteTask = async (taskId) => {
+  if (!confirm('Удалить задачу?')) return
+
+  await $fetch(`/api/tasks/${taskId}/delete`, {
+    method: 'DELETE'
+  })
 }
 
 const openAssignPopup = (event, taskId) => {
@@ -74,12 +105,10 @@ const assignUser = async (userId) => {
   await $fetch(`/api/tasks/${assignPopup.value.taskId}/assign`, {
     method: 'POST',
     body: {
-      assignerUserId: authStore.user.userId,
       targetUserId: userId
     }
   })
   assignPopup.value.visible = false
-  await fetchTasks()
 }
 
 const onDrop = async (event, status) => {
@@ -89,15 +118,23 @@ const onDrop = async (event, status) => {
     method: 'PATCH',
     body: { status }
   })
-
-  await fetchTasks()
 }
 
 const onDragStart = (event, taskId) => {
   event.dataTransfer.setData('taskId', taskId)
 }
 
-onMounted(fetchTasks)
+const isAssignedToMe = (task) => {
+  return (task.assignedUsers || []).some(u => u.userId === authStore.user?.userId)
+}
+
+onMounted(() => {
+  connectTasksRealtime()
+})
+
+onUnmounted(() => {
+  if (tasksEventSource) tasksEventSource.close()
+})
 </script>
 
 <template>
@@ -123,11 +160,8 @@ onMounted(fetchTasks)
         >
           <div class="task-header">
             <h4>{{ task.taskName }}</h4>
-            <span
-            class="priority-badge"
-            :class="priorityMap[task.priority]?.class"
-            >
-                {{ priorityMap[task.priority]?.label || task.priority }}
+            <span class="priority-badge" :class="priorityMap[task.priority]?.class">
+              {{ priorityMap[task.priority]?.label || task.priority }}
             </span>
           </div>
 
@@ -135,25 +169,42 @@ onMounted(fetchTasks)
 
           <div class="tags">
             <span v-for="tag in task.tags" :key="tag" class="tag">{{ tag }}</span>
-            <span class="tag">{{ new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+            <span class="tag">
+              {{ new Date(task.deadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+            </span>
           </div>
 
           <div class="deadline">
             Создано: {{ new Date(task.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) }}
           </div>
 
-          <div class="assigned-users">
+          <div class="assigned-users" v-if="task.assignedUsers?.length">
             <img
               v-for="user in task.assignedUsers"
               :key="user.userId"
               :src="user.avatar"
               :alt="user.username"
               class="assigned-avatar"
+              :title="user.username"
             />
           </div>
 
           <div class="task-actions">
-            <button @click="takeTask(task.taskId)" class="take-btn">Взять задачу</button>
+            <button
+              v-if="!isAssignedToMe(task)"
+              @click="takeTask(task.taskId)"
+              class="take-btn"
+            >
+              Взять задачу
+            </button>
+
+            <button
+              v-else
+              @click="refuseTask(task.taskId)"
+              class="refuse-btn"
+            >
+              Отказаться
+            </button>
 
             <button
               v-if="authStore.user?.rights === 1"
@@ -161,6 +212,14 @@ onMounted(fetchTasks)
               class="assign-btn"
             >
               Назначить пользователя
+            </button>
+
+            <button
+              v-if="authStore.user?.rights === 1"
+              @click="deleteTask(task.taskId)"
+              class="delete-btn"
+            >
+              Удалить задачу
             </button>
           </div>
         </div>
@@ -196,17 +255,22 @@ onMounted(fetchTasks)
   gap: 16px;
   padding: 0 20px 20px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  box-sizing: border-box;
 }
 
 .kanban-column {
   min-width: 320px;
-  flex: 1;
+  max-width: 100%;
+  flex: 1 1 320px;
   background: #0f0f12;
   border: 1px solid #2d2d35;
   border-radius: 16px;
   padding: 16px;
   color: #efeff1;
+  box-sizing: border-box;
 }
 
 .kanban-title {
@@ -229,6 +293,8 @@ onMounted(fetchTasks)
   padding: 14px;
   cursor: grab;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .task-sticker:active {
@@ -239,6 +305,16 @@ onMounted(fetchTasks)
   display: flex;
   justify-content: space-between;
   gap: 10px;
+}
+
+.task-header h4 {
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.description {
+  word-break: break-word;
 }
 
 .tags {
@@ -269,7 +345,9 @@ onMounted(fetchTasks)
 }
 
 .take-btn,
-.assign-btn {
+.assign-btn,
+.refuse-btn,
+.delete-btn {
   border: none;
   border-radius: 10px;
   padding: 10px 12px;
@@ -281,9 +359,26 @@ onMounted(fetchTasks)
   color: #fff;
 }
 
+.refuse-btn {
+  background: #ef4444;
+  color: #fff;
+}
+
 .assign-btn {
   background: #8b5cf6;
   color: #fff;
+}
+
+.delete-btn {
+  background: #991b1b;
+  color: #fff;
+}
+
+.assigned-users {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
 .assign-popup {
@@ -294,6 +389,7 @@ onMounted(fetchTasks)
   border: 1px solid #2d2d35;
   border-radius: 14px;
   padding: 12px;
+  box-sizing: border-box;
 }
 
 .search-input {
@@ -304,6 +400,7 @@ onMounted(fetchTasks)
   border-radius: 10px;
   padding: 10px;
   outline: none;
+  box-sizing: border-box;
 }
 
 .search-results {

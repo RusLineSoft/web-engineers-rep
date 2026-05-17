@@ -1,67 +1,73 @@
 import Task from '~/server/models/task.model'
 import { User } from '~/server/models/user.model'
+import { sendRealtimeEvent } from '~/server/utils/realtime'
 
 export default defineEventHandler(async (event) => {
   const taskId = Number(getRouterParam(event, 'id'))
   const body = await readBody(event)
-  const { assignerUserId, targetUserId } = body
+  const targetUserId = body.targetUserId?.toString()
 
-  if (!taskId || !assignerUserId || !targetUserId) {
+  if (!taskId || !targetUserId) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'taskId, assignerUserId and targetUserId are required'
+      statusMessage: 'taskId and targetUserId are required'
     })
   }
 
-  const [task, assigner, targetUser] = await Promise.all([
-    Task.findOne({ taskId }),
-    User.findOne({ userId: assignerUserId }),
-    User.findOne({ userId: targetUserId })
-  ])
+  const task = await Task.findOne({ taskId })
+  const user = await User.findOne({ userId: targetUserId })
 
-  if (!task || !assigner || !targetUser) {
+  if (!task) {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Task, assigner or target user not found'
+      statusMessage: 'Task not found'
     })
   }
 
-  if (assigner.rights !== 1) {
+  if (!user) {
     throw createError({
-      statusCode: 403,
-      statusMessage: 'Access denied'
+      statusCode: 404,
+      statusMessage: 'User not found'
     })
   }
 
-  const userHasTask = targetUser.currentTasks?.some((t) => t.taskId === taskId)
+  const alreadyAssigned = task.assignedUsers?.some((u: any) => u.userId === targetUserId)
 
-  if (!userHasTask) {
-    targetUser.currentTasks.push({
-      taskId: task.taskId,
-      taskName: task.taskName,
-      status: task.status,
-      priority: task.priority,
-      tags: task.tags,
-      createdAt: task.createdAt,
-      deadline: task.deadline
-    })
-
-    targetUser.tasksCount = (targetUser.tasksCount || 0) + 1
-  }
-
-  const taskHasUser = task.assignedUsers?.some((u) => u.userId === targetUserId)
-
-  if (!taskHasUser) {
+  if (!alreadyAssigned) {
     task.assignedUsers.push({
-      userId: targetUser.userId,
-      username: targetUser.username,
-      avatar: targetUser.avatar
+      userId: user.userId,
+      username: user.username,
+      avatar: user.avatar
     })
   }
 
-  await Promise.all([targetUser.save(), task.save()])
+  const currentTaskExists = (user.currentTasks || []).some((t: any) => t.taskId === task.taskId)
+
+  if (!currentTaskExists) {
+    user.currentTasks = [
+      ...(user.currentTasks || []),
+      {
+        taskId: task.taskId,
+        taskName: task.taskName,
+        status: task.status,
+        priority: task.priority,
+        tags: task.tags,
+        createdAt: task.createdAt,
+        deadline: task.deadline
+      }
+    ]
+  }
+
+  user.tasksCount = user.currentTasks.length
+
+  await task.save()
+  await user.save()
+
+  sendRealtimeEvent('tasks', { type: 'task-updated', task: task.toObject() })
+  sendRealtimeEvent('me', { type: 'user-updated', userId: targetUserId, user: user.toObject() }, targetUserId)
 
   return {
-    success: true
+    success: true,
+    task
   }
 })

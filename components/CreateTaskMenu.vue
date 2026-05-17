@@ -8,7 +8,7 @@ const description = ref('')
 const status = ref('To Do')
 const priority = ref('notUrgently')
 const selectedTags = ref([])
-const deadline = ref(Date.now)
+const deadline = ref('')
 
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -16,27 +16,27 @@ const errorMessage = ref('')
 const tags = [
   {
     label: 'Дизайн',
-    value: 'Дизайн',
+    value: 'design',
     className: 'tag-design'
   },
   {
     label: 'Тестирование',
-    value: 'Тестирование',
+    value: 'testing',
     className: 'tag-testing'
   },
   {
     label: 'Маркетинг',
-    value: 'Маркетинг',
+    value: 'marketing',
     className: 'tag-marketing'
   },
   {
     label: 'Разработка',
-    value: 'Разработка',
+    value: 'development',
     className: 'tag-development'
   },
   {
     label: 'HR-менеджмент',
-    value: 'HR-менеджмент',
+    value: 'hr-management',
     className: 'tag-hr'
   }
 ]
@@ -75,7 +75,8 @@ const createTask = async () => {
         description: description.value.trim(),
         status: status.value,
         priority: priority.value,
-        tags: selectedTags.value
+        tags: selectedTags.value,
+        deadline: deadline.value ? new Date(deadline.value).toISOString() : null
       }
     })
 
@@ -86,6 +87,7 @@ const createTask = async () => {
     status.value = 'To Do'
     priority.value = 'notUrgently'
     selectedTags.value = []
+    deadline.value = ''
 
     closeWindow()
   } catch (error) {

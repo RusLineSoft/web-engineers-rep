@@ -50,6 +50,11 @@ const TaskSchema = new mongoose.Schema(
       }
     ],
 
+    position: {
+      x: { type: Number, default: 0 },
+      y: { type: Number, default: 0 }
+    },
+
     createdAt: {
         type: Date,
         default: Date.now

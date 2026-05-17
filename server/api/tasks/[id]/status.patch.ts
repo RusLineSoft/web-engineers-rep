@@ -1,4 +1,5 @@
 import Task from '~/server/models/task.model'
+import { sendRealtimeEvent } from '~/server/utils/realtime'
 
 export default defineEventHandler(async (event) => {
   const taskId = Number(getRouterParam(event, 'id'))
@@ -33,6 +34,8 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Task not found'
     })
   }
+
+  sendRealtimeEvent('tasks', { type: 'task-updated', task: task.toObject() })
 
   return {
     success: true,

@@ -1,4 +1,5 @@
 import Task from '~/server/models/task.model'
+import { sendRealtimeEvent } from '~/server/utils/realtime'
 
 const generateSixDigitId = () => Math.floor(100000 + Math.random() * 900000)
 
@@ -30,6 +31,44 @@ const getNextFreePosition = async () => {
   return { x: START_X, y: START_Y }
 }
 
+const parseTags = (value: any): string[] => {
+  if (!value) return []
+
+  if (Array.isArray(value)) {
+    return value.map((t) => String(t).trim()).filter(Boolean)
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return []
+
+    try {
+      const parsed = JSON.parse(trimmed)
+      if (Array.isArray(parsed)) {
+        return parsed.map((t) => String(t).trim()).filter(Boolean)
+      }
+    } catch {}
+
+    return trimmed
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+  }
+
+  return []
+}
+
+const parseDeadline = (value: any): Date => {
+  if (!value) return new Date()
+
+  const parsed = new Date(String(value))
+  if (isNaN(parsed.getTime())) {
+    return new Date()
+  }
+
+  return parsed
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
 
@@ -37,8 +76,8 @@ export default defineEventHandler(async (event) => {
   const description = body.description?.trim() || ''
   const status = body.status || 'To Do'
   const priority = body.priority || 'notUrgently'
-  const tags = Array.isArray(body.tags) ? body.tags : []
-  const deadline = body.deadline ? new Date(body.deadline) : new Date()
+  const tags = parseTags(body.tags)
+  const deadline = parseDeadline(body.deadline)
 
   if (!taskName) {
     throw createError({ statusCode: 400, message: 'Введите название задачи' })
@@ -56,7 +95,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Некорректный приоритет задачи' })
   }
 
-  const filteredTags = tags.filter((tag: string) => allowedTags.includes(tag))
+  const filteredTags = tags.filter((tag) => allowedTags.includes(tag))
 
   let taskId = generateSixDigitId()
   let exists = await Task.findOne({ taskId })
@@ -78,6 +117,11 @@ export default defineEventHandler(async (event) => {
     deadline,
     position,
     assignedUsers: []
+  })
+
+  sendRealtimeEvent('tasks', {
+    type: 'task-created',
+    task: task.toObject()
   })
 
   return { success: true, task }

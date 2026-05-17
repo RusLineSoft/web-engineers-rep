@@ -9,7 +9,9 @@ export default defineEventHandler(async (event) => {
 
   const users = await User.find({
     username: { $regex: query, $options: 'i' }
-  }).select('userId username avatar rights')
+  })
+    .select('userId username avatar rights')
+    .limit(20)
 
   return { users }
 })
