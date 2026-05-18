@@ -29,7 +29,7 @@ export default defineNitroPlugin(async (nitroApp) => {
             if (event.routingKey === 'task.created' || event.routingKey === 'task.updated') {
               const task = event.data;
               if (task.tags && task.tags.includes('URGENT') && task.priority !== 'Urgent') {
-                const updated = await Task.findByIdAndUpdate(task._id, { priority: 'Urgent' }, { returnDocument: 'after' });
+                const updated = await Task.findByIdAndUpdate(task._id, { priority: 'Urgent' }, { new: true } as any);
                 console.log(`[Consumer] Applied Rule A: Elevated priority to Urgent for task ${task._id}`);
                 
                 // @ts-ignore

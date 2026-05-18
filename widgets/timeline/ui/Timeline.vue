@@ -52,7 +52,7 @@ const activeTasks = computed(() => {
     return true; 
   }).sort((a, b) => {
     const priMap: Record<string, number> = { 'Urgent': 4, 'High': 3, 'Medium': 2, 'Low': 1 };
-    return priMap[b.priority] - priMap[a.priority];
+    return (priMap[b.priority] ?? 0) - (priMap[a.priority] ?? 0);
   });
 });
 

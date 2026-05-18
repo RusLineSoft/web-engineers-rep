@@ -28,7 +28,7 @@
         <label>Чеклист</label>
         <div class="checklist-container">
           <div v-for="(item, idx) in task.checklist" :key="idx" class="checklist-item">
-            <input type="checkbox" :checked="item.isCompleted" @change="toggleChecklistItem(idx)" />
+            <input type="checkbox" :checked="item.isCompleted" @change="toggleChecklistItem(Number(idx))" />
             <span :class="{ completed: item.isCompleted }">{{ item.title }}</span>
           </div>
           <!-- Добавление подзадач разрешено только администратору -->
@@ -145,10 +145,13 @@ const updateTask = async (data: any) => {
     // Локальное обновление в хранилище для мгновенного отклика (оффлайн-фоллбэк)
     const idx = kanbanStore.tasks.findIndex(t => t._id === updated._id);
     if (idx !== -1) {
-      const col = kanbanStore.columns.find(c => c._id === (typeof updated.column === 'object' ? updated.column._id : updated.column));
-      if (col) updated.column = col;
-      // Сохраняем реактивную ссылку на объект
-      Object.assign(kanbanStore.tasks[idx], updated);
+      const taskToUpdate = kanbanStore.tasks[idx];
+      if (taskToUpdate) {
+        const col = kanbanStore.columns.find(c => c._id === (typeof updated.column === 'object' ? updated.column._id : updated.column));
+        if (col) updated.column = col;
+        // Сохраняем реактивную ссылку на объект
+        Object.assign(taskToUpdate, updated);
+      }
     }
   } catch (err) {
     console.error('Ошибка при обновлении задачи:', err);

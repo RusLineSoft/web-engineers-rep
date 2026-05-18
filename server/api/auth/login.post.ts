@@ -1,4 +1,5 @@
 import { User } from '~/server/models/user.model';
+import type { IUserDocument } from '~/server/models/user.model';
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { email, password } = body;

@@ -90,7 +90,7 @@
           <div class="deadline-icon">&#9200;</div>
           <div class="deadline-info">
             <span class="d-title">{{ task.title }}</span>
-            <span class="d-time">{{ new Date(task.dueDate).toLocaleDateString() }}</span>
+            <span class="d-time">{{ task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '' }}</span>
           </div>
         </div>
         <div v-if="upcomingTasks.length === 0" class="empty-state">

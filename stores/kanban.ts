@@ -34,6 +34,7 @@ export interface Task {
   dueDate?: string;
   order: number;
   createdAt: string;
+  updatedAt?: string;
   checklist?: ChecklistItem[];
 }
 

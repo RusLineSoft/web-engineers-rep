@@ -12,19 +12,54 @@
     font-weight: normal; 
 }
 
+:root {
+  /* Цветовая палитра в стиле интерфейсов Hologram и Sapphire UI */
+  --bg-void: #09090b;
+  --bg-panel: #121214;
+  --bg-panel-light: #18181b;
+  
+  --accent-primary: #8b5cf6; /* Фиолетовый оттенок Sapphire UI */
+  --accent-secondary: #06b6d4; /* Бирюзовый оттенок */
+  --accent-success: #22c55e; /* Зеленый оттенок Hologram */
+  --accent-warning: #f59e0b; /* Оранжевый оттенок */
+  --accent-danger: #ef4444; /* Красный оттенок */
+  
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-dim: #71717a;
+  
+  --border-subtle: #27272a;
+  --border-glow: rgba(139, 92, 246, 0.3);
+  
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+  
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 * {
-    font-family: 'Breakthrough Regular';
-    color: #fff;
+    font-family: 'Breakthrough Regular', 'Inter', sans-serif;
+    box-sizing: border-box;
     margin: 0;
+    padding: 0;
 }
 
 body {
-    background: linear-gradient(to bottom right, #230842, #061942);
+  margin: 0;
+  background-color: #09090b;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 55%),
+    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.06) 0px, transparent 55%);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
 }
 
 button {
     min-width: 100px;
-    font-family: "Breakthrough Bold";
+    font-family: "Breakthrough Bold", 'Inter', sans-serif;
     appearance: none;
     border: 0;
     border-radius: 0.5em;
@@ -49,4 +84,57 @@ button:focus {
 
 button:disabled {
     background: linear-gradient(to bottom right, #4d4d4d, #636363);
+}
+
+/* Стекломорфизм и базовые контейнеры */
+.glass-panel {
+  background: rgba(18, 18, 22, 0.65);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.glass-card {
+  background: rgba(24, 24, 28, 0.45);
+  backdrop-filter: blur(8px) saturate(140%);
+  -webkit-backdrop-filter: blur(8px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.glass-card:hover {
+  background: rgba(32, 32, 38, 0.65);
+  border-color: rgba(139, 92, 246, 0.45);
+  transform: translateY(-2.5px) scale(1.005);
+  box-shadow: 0 12px 30px rgba(139, 92, 246, 0.15);
+}
+
+/* Кастомные полосы прокрутки */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+.custom-gradient-text {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

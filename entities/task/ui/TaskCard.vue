@@ -42,7 +42,7 @@
           <rect x="3" y="3" width="18" height="18" rx="2" />
         </svg>
         <span class="meta-text">
-          {{ task.checklist.filter(i => i.isCompleted).length }}/{{ task.checklist.length }}
+          {{ task.checklist.filter((i: any) => i.isCompleted).length }}/{{ task.checklist.length }}
         </span>
       </div>
     </div>

@@ -119,7 +119,16 @@ const getAvatarUrl = (avatar?: string) => {
   return avatar;
 };
 
-const navItems = [
+interface NavItem {
+  label: string;
+  view: string;
+  svgPath: string;
+  svgRect?: { x: string; y: string; width: string; height: string; rx: string };
+  svgCircle?: { cx: string | number; cy: string | number; r: string | number };
+  badge?: string | number;
+}
+
+const navItems: NavItem[] = [
   { label: 'Дашборд', view: 'Dashboard', svgPath: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
   { label: 'Доска', view: 'Board', svgPath: 'M9 11l3 3L22 4', svgRect: { x: '3', y: '3', width: '18', height: '18', rx: '2' } },
   { label: 'Таймлайн', view: 'Timeline', svgPath: 'M12 8v4l3 3', svgCircle: { cx: '12', cy: '12', r: '10' } },
@@ -135,7 +144,7 @@ const handleCreateProject = () => {
   const name = newProjectName.value.trim();
   if (name) {
     const colors = ['#22c55e', '#a855f7', '#f59e0b', '#06b6d4', '#ec4899', '#3b82f6'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)] || '#3b82f6';
     kanbanStore.addProject(name, randomColor);
     newProjectName.value = '';
     isCreatingProject.value = false;
