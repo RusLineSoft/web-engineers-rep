@@ -101,9 +101,9 @@ export const useKanbanStore = defineStore('kanban', () => {
    * @param newColumnId Идентификатор целевой колонки.
    */
   const moveTask = async (taskId: string, newColumnId: string): Promise<void> => {
-    // Ограничение перемещения в Бэклог для сотрудников (role === 'user')
+    // Ограничение перемещения в Бэклог для сотрудников (rights === 1)
     const authStore = useAuthStore();
-    if (authStore.user?.role === 'user') {
+    if (authStore.user?.rights === 1) {
       const targetColumn = columns.value.find(c => c._id === newColumnId);
       if (targetColumn) {
         const title = targetColumn.title.toLowerCase();

@@ -15,7 +15,7 @@
       </div>
       
       <!-- Системные действия -->
-      <button v-if="authStore.user?.role === 'admin'" class="more-btn">•••</button>
+      <button v-if="authStore.user?.rights === 3" class="more-btn">•••</button>
     </div>
 
     <!-- Заголовок и описание задачи -->
@@ -47,22 +47,22 @@
       </div>
     </div>
 
-    <!-- Кнопка "Взять задачу" для роли 'user' в стиле glassmorphism -->
+    <!-- Кнопка Взять задачу для роли пользователя и разработчика в стиле glassmorphism -->
     <button 
-      v-if="authStore.user?.role === 'user' && isTodoColumn" 
+      v-if="(authStore.user?.rights === 1 || authStore.user?.rights === 2) && isTodoColumn" 
       @click="takeTask" 
       class="take-task-btn"
     >
-      🎯 Взять задачу
+      Взять задачу
     </button>
 
-    <!-- Кнопка "Отказаться" для роли 'user' в стиле glassmorphism (для задач в работе) -->
+    <!-- Кнопка Отказаться для роли пользователя и разработчика в стиле glassmorphism (для задач в работе) -->
     <button 
-      v-if="authStore.user?.role === 'user' && isInProgressColumn" 
+      v-if="(authStore.user?.rights === 1 || authStore.user?.rights === 2) && isInProgressColumn" 
       @click="refuseTask" 
       class="refuse-task-btn"
     >
-      ❌ Отказаться
+      Отказаться
     </button>
   </div>
 </template>
@@ -117,7 +117,18 @@ const takeTask = async (event: MouseEvent) => {
   event.stopPropagation(); // Предотвращаем открытие модального окна деталей задачи
   const targetCol = inProgressColumn.value;
   if (targetCol) {
-    await kanbanStore.moveTask(props.task._id, targetCol._id);
+    try {
+      await $fetch(`/api/tasks/${props.task._id}`, {
+        method: 'PUT',
+        body: { 
+          column: targetCol._id,
+          assignee: authStore.user?.username || 'Сотрудник'
+        }
+      });
+      await kanbanStore.fetchBoard();
+    } catch (err) {
+      console.error('Ошибка при взятии задачи:', err);
+    }
   }
 };
 

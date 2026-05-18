@@ -32,7 +32,7 @@
             <span :class="{ completed: item.isCompleted }">{{ item.title }}</span>
           </div>
           <!-- Добавление подзадач разрешено только администратору -->
-          <div v-if="authStore.user?.role === 'admin'" class="add-checklist-item">
+          <div v-if="authStore.user?.rights === 3" class="add-checklist-item">
             <input v-model="newItemTitle" type="text" placeholder="Добавить подзадачу..." @keyup.enter="addChecklistItem" class="glass-input small" />
           </div>
         </div>
@@ -55,7 +55,7 @@
 
       <div class="details-footer">
         <!-- Удаление доступно только администратору -->
-        <UiButton v-if="authStore.user?.role === 'admin'" variant="secondary" @click="handleDelete" class="delete-btn">
+        <UiButton v-if="authStore.user?.rights === 3" variant="secondary" @click="handleDelete" class="delete-btn">
           Удалить задачу
         </UiButton>
         <UiButton @click="handleClose">

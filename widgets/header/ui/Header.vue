@@ -23,7 +23,7 @@
       </div>
 
       <!-- Создание задачи -->
-      <button v-if="authStore.user?.role === 'admin'" class="create-btn" @click="kanbanStore.isTaskModalOpen = true">
+      <button v-if="authStore.user?.rights === 3" class="create-btn" @click="kanbanStore.isTaskModalOpen = true">
         Создать задачу
       </button>
 
