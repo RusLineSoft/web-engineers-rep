@@ -1,329 +1,238 @@
-<script setup>
-import { useAuthStore } from '@/stores/auth';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-
-let authStore = useAuthStore();
-
-definePageMeta({
-  middleware: ["auth"]
-})
-
-useHead({
-    title: 'Канбан-доска // Web Engineers',
-    meta: [
-        { 
-            name: 'description', 
-            content: 'Страница авторизации для сотрудников компании' 
-        },
-    ],
-});
-
-const taskCount = authStore.user.tasksCount;
-const notificationCount = authStore.user.notification;
-
-const newTaskWindow = ref(false);
-
-// let ws = null;
-
-// const connectWebSocket = () => {
-//   if (!authStore.isAuthenticated || !authStore.user?.userId) {
-//     console.warn('Невозможно подключиться к WebSocket: пользователь не аутентифицирован или нет ID.');
-//     return;
-//   }
-
-//   ws = new WebSocket('ws://localhost:8080/ws?userId=${authStore.user.userId}'); 
-
-//   ws.onopen = () => {
-//     console.log('WebSocket-соединение установлено.');
-//   };
-//   ws.onmessage = (event) => {
-//     const data = JSON.parse(event.data);
-    
-//     if (data.type === 'initialData' || data.type === 'update') {
-//       taskCount.value = data.tasks;
-//       notificationCount.value = data.notifications;
-//     }
-//   };
-
-//   ws.onerror = (error) => {
-//     console.error('Ошибка WebSocket:', error);
-//   };
-
-//   ws.onclose = (event) => {
-//     console.log('WebSocket-соединение закрыто:', event.code, event.reason);
-//     if (!event.wasClean) {
-//       console.log('Попытка переподключения через 3 секунды...');
-//       setTimeout(connectWebSocket, 3000); 
-//     }
-//   };
-// };
-
-// const disconnectWebSocket = () => {
-//   if (ws) {
-//     ws.close(1000, 'Component unmounted');
-//     ws = null;
-//   }
-// };
-
-// onMounted(() => {
-//   connectWebSocket(); 
-// });
-
-// onUnmounted(() => {
-//   disconnectWebSocket();
-// });
-
-// watch(() => authStore.isAuthenticated, (newVal, oldVal) => {
-//   if (newVal && !oldVal) {
-//     disconnectWebSocket();
-//     connectWebSocket();
-//   } else if (!newVal && oldVal) {
-//     disconnectWebSocket();
-//     taskCount.value = null;
-//     notificationCount.value = null;
-//   }
-// }, { immediate: true });
-
-const handleLogout = () => {
-    authStore.logout();
-    navigateTo('/login');
-};
-
-const newTask = () => {
-    newTaskWindow.value = true;
-};
-
-const closeNewTask = () => {
-    newTaskWindow.value = false;
-};
-</script>
-
 <template>
-<div style="display: flex; justify-content: center; align-items: start;">
-    <aside class="sidebar">
-
-        <div class="profile-card">
-        <div class="avatar-wrapper">
-            <img :src="authStore.user?.avatar || 'https://via.placeholder.com/64'" alt="Avatar" class="avatar">
-            <div class="status-indicator" :class="{'online': authStore.isAuthenticated}"></div>
-        </div>
-        <div class="profile-info">
-            <h2 class="username">{{ authStore.user?.username || 'Гость' }}</h2>
-            <span class="rank-badge">{{ authStore.user?.rank || 'Новичок' }}</span>
-        </div>
-        <button @click="handleLogout" class="logout-btn-profile" title="Выйти из аккаунта">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+  <div class="dashboard-page">
+    <!-- Минималистичная подшапка с фильтрами по референсу Sapphire UI -->
+    <div class="board-sub-header">
+      <div class="view-title">
+        <h2>{{ getCurrentViewLabel(kanbanStore.currentView) }}</h2>
+      </div>
+      <div class="filter-group">
+        <button v-for="p in priorities" 
+                :key="p.value" 
+                :class="{ active: kanbanStore.filterPriority === p.value }"
+                @click="kanbanStore.filterPriority = p.value">
+          {{ p.label }}
         </button>
-        </div>
-
-        <nav class="menu">
-        <button class="menu-item active">
-            <div class="menu-item-content">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
-            <span>Мои задачи</span>
-            </div>
-            <span v-if="taskCount !== null" class="count-badge">{{ taskCount }}</span>
-            <span v-else class="count-badge loading">...</span>
-        </button>
-
-        <button class="menu-item">
-            <div class="menu-item-content">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            <span>Лента событий</span>
-            </div>
-        </button>
-
-        <button class="menu-item">
-            <div class="menu-item-content">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-            <span>Уведомления</span>
-            </div>
-            <span v-if="notificationCount !== null" class="count-badge notify">{{ notificationCount }}</span>
-            <span v-else class="count-badge notify loading">...</span>
-        </button>
-        </nav>
-
-        <div class="sidebar-footer">
-        </div>
-    </aside>
-    <section style="width: 100%;">
-        <div style="padding: 20px;">
-            <button @click="newTask()" style="display: flex; align-items: center; gap: 5px; background: #ffffff35;"><img style="width: 20px; height: 20px;" src="../public/img/plus.svg"> Новая задача</button>
-            <div style="position: absolute; top: 50%; ">
-
-            </div>
-        </div>
-        <div style="padding: 20px;">
-            <!-- Здесь будет канбан-доска, но ее пока нет :) Как из теха вернусь, сделаю -->
-        </div>
-    </section>
-    <div style="position: absolute; top: 50%; left: 50%; padding: 20px; background: #ffffff11; backdrop-filter: blur(15px); border-radius: 15px; box-shadow: 0 0 20px #00000033;" v-if="newTaskWindow">
-        <h2 style="font-family: 'Breakthrough Bold';">Новая задача</h2>
-        <button @click="closeNewTask()">Закрыть</button>
+      </div>
     </div>
-</div>
+
+    <!-- Разделы навигации по вкладкам -->
+    <div class="view-content" v-if="kanbanStore.currentView === 'Dashboard'">
+      <DashboardStats />
+      <div class="section-divider">
+        <h3>Обзор спринта</h3>
+      </div>
+      <TasksTable />
+    </div>
+
+    <div class="view-content" v-else-if="kanbanStore.currentView === 'Board'">
+      <TasksTable />
+    </div>
+
+    <div class="view-content" v-else-if="kanbanStore.currentView === 'Timeline'">
+       <Timeline />
+    </div>
+
+    <div class="view-content" v-else-if="kanbanStore.currentView === 'Team'">
+       <Team />
+    </div>
+
+    <div class="view-content mocked-view" v-else-if="kanbanStore.currentView === 'Settings'">
+       <div class="glass-panel placeholder-card">
+          <h3>Настройки проекта</h3>
+          <div class="setting-item">
+             <label>Название проекта</label>
+             <input type="text" value="Hologram App" class="glass-input" />
+          </div>
+       </div>
+    </div>
+
+    <CreateTaskModal 
+      v-model="kanbanStore.isTaskModalOpen" 
+      :columns="kanbanStore.columns" 
+      @created="kanbanStore.fetchBoard()"
+    />
+  </div>
 </template>
 
+<script setup lang="ts">
+import { computed, onMounted } from 'vue';
+import { useKanbanStore } from '~/stores/kanban';
+import { useNuxtApp } from '#app';
+import TasksTable from '~/widgets/tasks-table/ui/TasksTable.vue';
+import DashboardStats from '~/widgets/dashboard-stats/ui/DashboardStats.vue';
+import CreateTaskModal from '~/features/create-task/ui/CreateTaskModal.vue';
+import Timeline from '~/widgets/timeline/ui/Timeline.vue';
+import Team from '~/widgets/team/ui/Team.vue';
+
+const kanbanStore = useKanbanStore();
+const nuxtApp = useNuxtApp();
+
+const totalTasks = computed(() => kanbanStore.tasks.length);
+
+const priorities = [
+  { label: 'Все', value: 'All' },
+  { label: 'Срочно', value: 'Urgent' },
+  { label: 'Высокий', value: 'High' },
+  { label: 'Средний', value: 'Medium' },
+  { label: 'Низкий', value: 'Low' }
+];
+
+const getCurrentViewLabel = (view: string) => {
+  const views: Record<string, string> = {
+    Dashboard: 'Дашборд',
+    Board: 'Рабочая доска',
+    Timeline: 'Таймлайн',
+    Team: 'Команда',
+    Settings: 'Настройки'
+  };
+  return views[view] || view;
+};
+
+onMounted(async () => {
+  await kanbanStore.fetchBoard();
+  
+  if (nuxtApp.$socket) {
+    // @ts-ignore
+    nuxtApp.$socket.connect();
+    // @ts-ignore
+    kanbanStore.initSocket(nuxtApp.$socket);
+  }
+});
+</script>
+
 <style scoped>
-.sidebar {
-  height: 100vh;
-  width: 300px;
-  background-color: #0f0f12;
-  color: #efeff1;
+.dashboard-page {
   display: flex;
   flex-direction: column;
-  padding: 32px 20px;
-  border-right: 1px solid #2d2d35;
-  font-family: 'Inter', sans-serif;
+  gap: 32px;
 }
 
-.profile-card {
+.board-sub-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  margin-bottom: 40px;
-  transition: transform 0.2s;
+  padding: 16px 0 8px;
 }
 
-.avatar-wrapper {
-  position: relative;
-}
-
-.avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #3b82f6;
-}
-
-.status-indicator {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 12px;
-  height: 12px;
-  background: #22c55e;
-  border: 2px solid #0f0f12;
-  border-radius: 50%;
-}
-
-.username {
-  font-size: 18px;
+.view-title h2 {
+  font-size: 1.4rem;
   font-weight: 700;
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #f4f4f5;
 }
 
-.rank-badge {
-  font-size: 12px;
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 8px;
-  border-radius: 20px;
+.filter-group {
+  display: flex;
+  background: #18181b;
+  border: 1px solid #27272a;
+  padding: 3px;
+  border-radius: 8px;
 }
 
-.logout-btn-profile {
+.filter-group button {
   background: none;
   border: none;
-  color: #94a3b8;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: color 0.2s, background-color 0.2s;
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logout-btn-profile:hover {
-  color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.2);
-}
-
-.logout-btn-profile svg {
-  display: block;
-}
-
-/* Меню */
-.menu {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.menu-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: 12px;
-  background: transparent;
-  border: none;
-  color: #94a3b8;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #71717a;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-}
-
-.menu-item.active {
-  background: #3b82f6;
-  color: #fff;
-}
-
-.menu-item-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 500;
-}
-
-.count-badge {
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 2px 8px;
-  border-radius: 8px;
-  color: #fff;
-}
-
-.count-badge.notify {
-  background: #ef4444;
-}
-
-.sidebar-footer {
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid #2d2d35;
-}
-
-.logout-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px;
-  background: transparent;
-  border: 1px solid #3f3f46;
-  border-radius: 12px;
+.filter-group button:hover {
   color: #f4f4f5;
-  cursor: pointer;
-  transition: 0.3s;
 }
 
-.logout-btn:hover {
-  background: #ef4444;
-  border-color: #ef4444;
+.filter-group button.active {
+  background: #27272a;
+  color: #f4f4f5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.welcome-text h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.welcome-text p {
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.glass-btn {
+  padding: 12px 24px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel-light);
+  color: var(--text-main);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: var(--transition-fast);
+}
+
+.glass-btn.primary {
+  background: var(--accent-primary);
+  border: none;
+  box-shadow: 0 4px 20px rgba(157, 0, 255, 0.4);
+}
+
+.view-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.section-divider {
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 12px;
+  margin-top: 16px;
+}
+
+.section-divider h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  opacity: 0.9;
+}
+
+.placeholder-card {
+  padding: 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.timeline-mock {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, var(--bg-panel-light) 25%, var(--accent-primary) 50%, var(--bg-panel-light) 75%);
+  border-radius: 12px;
+  opacity: 0.3;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+}
+
+.glass-input {
+  background: var(--bg-panel-light);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px;
+  color: white;
 }
 </style>
