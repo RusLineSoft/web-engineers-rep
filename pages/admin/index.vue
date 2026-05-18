@@ -285,7 +285,7 @@ const handleCreateUser = async () => {
 
 // Защита и проверка прав при монтировании
 onMounted(async () => {
-  if (!authStore.isAuthenticated || authStore.user?.role !== 'admin') {
+  if (!authStore.isAuthenticated || authStore.user?.rights !== 3) {
     await navigateTo('/login');
     return;
   }

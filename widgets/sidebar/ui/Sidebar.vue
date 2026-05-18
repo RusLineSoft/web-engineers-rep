@@ -74,7 +74,7 @@
 
       <!-- Профиль текущего авторизованного пользователя -->
       <div class="user-profile" @click="isProfileMenuOpen = !isProfileMenuOpen">
-        <div class="avatar" :class="authStore.user?.role || 'user'">
+        <div class="avatar" :class="authStore.user?.rights === 3 ? 'admin' : (authStore.user?.rights === 2 ? 'dev' : 'user')">
           <img v-if="isImageAvatar(authStore.user?.avatar)" :src="getAvatarUrl(authStore.user?.avatar)" class="avatar-image" />
           <span v-else>{{ authStore.user?.avatar || '👤' }}</span>
         </div>
